@@ -42,6 +42,7 @@ INSTALLED_APPS = [
     # Manually installed project apps.
     'category',
     'accounts',
+    'store',
 ]
 
 MIDDLEWARE = [
