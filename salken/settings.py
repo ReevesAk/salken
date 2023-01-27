@@ -21,7 +21,7 @@ BASE_DIR = Path(__file__).resolve().parent.parent
 # See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
 
 # SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = os.environ.get('DJANGO_SECRET_KEY')
+SECRET_KEY = os.environ.get('SECRET_KEY', default='foo')
 
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = True
@@ -74,6 +74,8 @@ TEMPLATES = [
 
 WSGI_APPLICATION = 'salken.wsgi.application'
 
+
+AUTH_USER_MODEL = 'accounts.Account'
 
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
