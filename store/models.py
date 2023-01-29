@@ -3,7 +3,7 @@ from category.models import Category
 
 # Create your models here.
 
-# Product describes model for each product category.
+# Product describes database model for each product in the store.
 class Product(models.Model):
     product_name    = models.CharField(max_length=250, unique=True)
     slug            = models.SlugField(max_length=200, unique=True)

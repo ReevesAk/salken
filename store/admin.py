@@ -6,6 +6,6 @@ from . models import Product
 # ProductAdmin pre_populates the slug when a product is being added.
 class ProductAdmin(admin.ModelAdmin):
     prepopulated_fields = {'slug': ('product_name',)}
-    list_display = ('product_name', 'price', 'stock', 'category', 'modified_date')
+    list_display = ('product_name', 'price', 'stock', 'category', 'added_at', 'modified_date')
 
-admin.site.register(Product)
+admin.site.register(Product, ProductAdmin)
