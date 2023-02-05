@@ -22,3 +22,7 @@ def store(request, category_slug=None):
         'products': products,
     }
     return render(request, template_name='store/store.html', context=context)
+
+
+def product_detail(request):
+    return render(request=request, template_name='store/product_detail.html')
