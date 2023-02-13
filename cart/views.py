@@ -1,6 +1,7 @@
 from django.shortcuts import render, redirect
 from store.models import Product
 from . models import Cart, CartItem
+from django.shortcuts import get_object_or_404
 
 # Create your views here.
 
@@ -35,6 +36,31 @@ def add_to_cart(request, product_id):
         )
         cart_item.save(self)    
     return redirect('cart')
+
+
+# remove_from_cart removes a product item from the cart.
+def remove_from_cart (request, product_id):
+    cart = Cart.objects.get(cart_id=cart_id(request))    
+    product = get_object_or_404(Product, id=product_id)
+    cart_item = CartItem.objects.get(product=product, cart=cart)
+
+    if cart_item.quantity > 1:
+        cart_item.quantity -= 1
+        cart_item.save(self)
+    else:
+        cart_item.delete(self)
+    return redirect('cart')    
+
+
+# remove_cart_item handles the removal of a card item from the cart.
+def remove_cart_item(request, product_id):
+    cart = Cart.objects.get(cart_id=cart_id(request))
+    product = get_object_or_404(Product, id=product_id)
+    cart_item = CartItem.objects.get(product=product, cart=cart)
+    cart_item.delete(self)
+    return redirect('cart')
+
+
 
 def cart(request, total=0, quantity=0, cart_item=None):
     try:
