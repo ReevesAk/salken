@@ -6,7 +6,7 @@ from django.shortcuts import get_object_or_404
 # Create your views here.
 
 # cart_id takes in session id in form of cart_id.
-def cart_id(request):
+def _cart_id(request):
     cart = request.session_key
     if not cart:
         cart = request.session_create()
