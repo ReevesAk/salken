@@ -2,14 +2,15 @@ from django.shortcuts import render, redirect
 from store.models import Product
 from . models import Cart, CartItem
 from django.shortcuts import get_object_or_404
+from django.core.exceptions import ObjectDoesNotExist
 
 # Create your views here.
 
 # cart_id takes in session id in form of cart_id.
 def _cart_id(request):
-    cart = request.session_key
+    cart = request.session.session_key
     if not cart:
-        cart = request.session_create()
+        cart = request.session.session_create()
     return cart
 
 # add_to_cart adds an item to cart whether or not the user has an account.
@@ -61,9 +62,10 @@ def remove_cart_item(request, product_id):
     return redirect('cart')
 
 
-
 def cart(request, total=0, quantity=0, cart_item=None):
     try:
+        tax = 0, # Initialise tax to bypass error.
+        grand_total = 0. # Initialise grand_total to bypass error.
         cart = Cart.objects.get(cart_id=_card_id(request))
         cart_items = CartItem.objects.filter(cart=cart, is_active=True)
         for cart_item in cart_items:
@@ -71,7 +73,7 @@ def cart(request, total=0, quantity=0, cart_item=None):
             quantity += cart_item.quantity
         tax = (24 * total) / 100
         grand_total = total + tax
-    except ObjectNotExist:
+    except ObjectDoesNotExist:
         pass    
 
 
