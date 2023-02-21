@@ -10,7 +10,7 @@ from django.core.exceptions import ObjectDoesNotExist
 def _cart_id(request):
     cart = request.session.session_key
     if not cart:
-        cart = request.session.session_create()
+        cart = request.session.create()
     return cart
 
 # add_to_cart adds an item to cart whether or not the user has an account.

@@ -1,5 +1,8 @@
 from django.shortcuts import render, get_object_or_404
 from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.db.models import Q
+
+
 from store.models import Product
 from category.models import Category
 from cart.models import CartItem
@@ -49,3 +52,21 @@ def product_detail(request):
         'incart'         : in_cart,
     }
     return render(request=request, template_name='store/product_detail.html', context=context)
+
+
+# search handles the search requests for products made by users.
+def search(request):
+
+    # Check if the GET request contains the word 'keyword', and 
+    # it if does, save the value in the keyword variable.
+    if "keyword" in request.GET:
+        keyword = request.GET('keyword')
+        if keyword:
+            # Q is a django feaure used for combining two or more querysets in a GET request.
+            product = Product.objects.order_by('-created_date').filter(Q(description__icontains=keyword) | Q(product_name__icontains=keyword))
+            product_count = products.count()
+    context = {
+        'products': product,
+        'product_count': product_count,
+    }
+    return render(request=request, template_name='store.html', context=context)
