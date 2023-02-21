@@ -16,6 +16,9 @@ def _cart_id(request):
 # add_to_cart adds an item to cart whether or not the user has an account.
 # It maks use of coookie session keys.
 def add_to_cart(request, product_id):
+    color = request.GET['color']
+    size = request.GET['size']
+
     product = Product.objects.get(id=product_id) # This gets the products from the store.
     try:
         cart = Cart.objects.get(cart_id=cart_id(request)) # get the cart using the cart_id present in the session.
