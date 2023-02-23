@@ -1,8 +1,11 @@
 from django.shortcuts import render, redirect
-from store.models import Product
-from . models import Cart, CartItem
 from django.shortcuts import get_object_or_404
 from django.core.exceptions import ObjectDoesNotExist
+
+
+from store.models import Product, Variation
+from . models import Cart, CartItem
+
 
 # Create your views here.
 
@@ -16,11 +19,20 @@ def _cart_id(request):
 # add_to_cart adds an item to cart whether or not the user has an account.
 # It maks use of coookie session keys.
 def add_to_cart(request, product_id):
-    if request.method == "POST":
-        color = request.GET['color']
-        size = request.GET['size']
-
     product = Product.objects.get(id=product_id) # This gets the products from the store.
+    product_variation = []
+    if request.method == "POST":
+        # loop through the request body and collect dynamic variation types.
+       for item in request.POST:
+           key = item
+           value = request.POST[key]
+
+           try:
+               variation =  Variation.objects.get(product=product, variation_category__iexact=key, variation_value__iexact=value)
+               product_variation.append(variation)
+           except:
+                pass
+
     try:
         cart = Cart.objects.get(cart_id=cart_id(request)) # get the cart using the cart_id present in the session.
     except Cart.DoesNotExist:
