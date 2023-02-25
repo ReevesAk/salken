@@ -41,15 +41,35 @@ def add_to_cart(request, product_id):
         )
         cart.save()    
 
-    try:
-        cart_item = CartItem.objects.get(product=product, cart=cart)
-        if len(product_variation) > 0:
-            cart_item.variation.clear()
-            for item in product_variation:
-                cart_item.variation.add(item)
-        cart_item.quantity += 1 # Increment cart_item.
-        cart_item.save(self)
-    except CartItem.DoesNotExist:
+    cart_item_exists = CartItem.objects.filter(product=product, cart=cart).exists()
+    if cart_item_exists:
+        cart_item = CartItem.objects.filter(product=product, cart=cart)
+        # existing_variations -> database
+        # current variation -> product_variation
+        # item_id -> database
+
+        ex_var_list = []
+        id = []
+        for item in cart_item:
+            existing_variations = item.variations.all()
+            ex_var_list.append(existing_variations)
+            id.append(item.id)
+
+        if product_variation in ex_var_list:
+            # increase the cart item quantity
+            index = ex_var_list.index(product_variation)
+            item_id = id[index]
+            item = CartItem.objects.get(product=product, id=item_id)
+            item.quantity += 1
+            item.save()
+
+        else:
+            item = CartItem.objects.create(product=product, quantity=1, cart=cart)
+            if len(product_variation) > 0:
+                item.variation.clear()
+                item.variation.add(*product_variation)
+            item.save()
+    else:
         cart_item = CartItem.objects.create(
             product=product,
             quantity=1, 
@@ -58,9 +78,8 @@ def add_to_cart(request, product_id):
         # add varitaion in a cart item.
         if len(product_variation) > 0:
             cart_item.variation.clear()
-            for item in product_variation:
-                cart_item.variation.add(item)
-        cart_item.save(self)    
+            cart_item.variation.add(*product_variation)
+        cart_item.save()    
     return redirect('cart')
 
 
