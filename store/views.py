@@ -33,7 +33,7 @@ def store(request, category_slug=None):
     context = {
         'products': paged_product,
     }
-    return render(request=request, template_name='store.html', context=context)
+    return render(request=request, template_name='store/store.html', context=context)
 
 
 # product_detail handles the logic of the details displayed about a product as
@@ -69,4 +69,4 @@ def search(request):
         'products': product,
         'product_count': product_count,
     }
-    return render(request=request, template_name='store.html', context=context)
+    return render(request=request, template_name='store/store.html', context=context)
