@@ -1,3 +1,5 @@
+import requests
+
 from django.shortcuts import render, redirect
 from django.contrib import messages, auth
 from django.contrib.auth.decorators import login_required
@@ -112,7 +114,16 @@ def login(request):
 
             auth.login(request, user)
             messages.success(request, "Login successful!")
-            return redirect('dashboard')
+            url = request.META.get('HTTP_REFERER')
+            try:
+                query = requests.utils.urlparse(url=url)
+                params = dict(x.split('=') for x in query.split('&'))
+                if "next" in params:
+                    nextPage = params["next"]
+                    return redirect(nextPage)
+            except:
+                return redirect('dashboard')
+
         else:
             messages.error(request, "Invalid login credentials!")
             return redirect('login')
