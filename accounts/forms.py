@@ -15,7 +15,7 @@ class RegistrationForm(forms.ModelForm):
         fields  = ['first_name', 'last_name', 'phone_no', 'email', 'password']
 
 
-    # overrides the registration fields and apply boostrap form control method to 
+    # overrides the registration fields and apply bootstrap form control method to 
     # all the form fields.
     def __init__(self, *args, **kwargs):
         super(RegistrationForm, self).__init__(*args, **kwargs)
