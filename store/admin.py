@@ -1,7 +1,14 @@
 from django.contrib import admin
-from . models import Product, Variation, ReviewRating
+from . models import Product, Variation, ReviewRating, ProductGallery
+import admin_thumbnails
+
 
 # Register your models here.
+
+@admin_thumbnails.thumbnail('image')
+class ProductGalleryInline(admin.TabularInline):
+    model = ProductGallery
+    extra = 1
 
 # ProductAdmin pre_populates the slug when a product is being added.
 class ProductAdmin(admin.ModelAdmin):
@@ -18,3 +25,4 @@ class VariationAdmin(admin.ModelAdmin):
 admin.site.register(Product, ProductAdmin)
 admin.site.register(Variation, VariationAdmin)
 admin.site.register(ReviewRating)
+admin.site.register(ProductGallery)
