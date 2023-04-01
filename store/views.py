@@ -8,6 +8,7 @@ from category.models import Category
 from cart.models import CartItem
 from cart.views import _cart_id
 from .forms import ReviewForm
+from orders.models import OrderProduct
 
 # Create your views here.
 
@@ -48,9 +49,20 @@ def product_detail(request):
     except Exception as e:                                
         raise e
 
+    if request.user.is_authenticated:
+        try:
+            orderproduct = OrderProduct.objects.filter(user=request.user, product_id=single_product.id).exists()
+        except OrderProduct.DoesNotExist:
+            orderproduct = None
+    else:
+        orderproduct = None    
+
     context = {
         'single_product' : single_product,
         'incart'         : in_cart,
+        'orderproduct': orderproduct,
+        'reviews': reviews,
+        'product_gallery': product_gallery,
     }
     return render(request=request, template_name='store/product_detail.html', context=context)
 
