@@ -27,7 +27,7 @@ SECRET_KEY = os.environ.get('SECRET_KEY', default='foo')
 # SECURITY WARNING: don't run with debug turned on in production!
 DEBUG = config('DEBUG', default=True, cast=bool) # True
 
-ALLOWED_HOSTS = []
+ALLOWED_HOSTS = ["django-salken-env.eba-xfbnb9g4.us-east-1.elasticbeanstalk.com"]
 
 
 # Application definition
