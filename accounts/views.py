@@ -1,6 +1,6 @@
 from urllib.parse import parse_qs, urlparse
 
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages, auth
 from django.contrib.auth.decorators import login_required
 from . forms import LoginForm, RegistrationForm, UserForm, UserProfileForm
@@ -310,8 +310,9 @@ def change_password(request):
 
 @login_required(login_url='login')
 def order_detail(request, order_id):
-    order_detail = OrderProduct.objects.filter(order__order_number=order_id)
-    order = Order.objects.get(order_number=order_id)
+    # Scope to the current user so customers cannot view each other's orders.
+    order = get_object_or_404(Order, order_number=order_id, user=request.user)
+    order_detail = OrderProduct.objects.filter(order=order)
     subtotal = 0
     for i in order_detail:
         subtotal += i.product_price * i.quantity
