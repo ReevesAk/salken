@@ -183,7 +183,7 @@ def dashboard(request):
 # forgotPassword handles the forgot password logic and view.
 def forgotPassword(request):
     if request.method == 'POST':
-        email = request.POST['email']
+        email = request.POST.get('email', '')
         if Account.objects.filter(email=email).exists():
             user = Account.objects.get(email__exact=email)
 
@@ -228,15 +228,20 @@ def resetpassword_validate(request, uidb64, token):
 
 # resetPassword handles the reset password logic and view.
 def resetPassword(request):
-    if request.method == 'POST':
-        password = request.POST['password']
-        confirm_password = request.POST['confirm_password']
+    uid = request.session.get('uid')
+    if uid is None:
+        messages.error(request, 'Please use the link in your password reset email.')
+        return redirect('forgotPassword')
 
-        if password == confirm_password:
-            uid = request.session.get('uid')
+    if request.method == 'POST':
+        password = request.POST.get('password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+
+        if password and password == confirm_password:
             user = Account.objects.get(pk=uid)
             user.set_password(password)
             user.save()
+            del request.session['uid']
             messages.success(request, 'Password reset successful')
             return redirect('login')
         else:
