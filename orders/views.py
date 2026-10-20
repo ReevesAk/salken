@@ -1,22 +1,31 @@
 import datetime
 import json
 
-from django.shortcuts import render, redirect
+from django.contrib import messages
+from django.contrib.auth.decorators import login_required
+from django.shortcuts import get_object_or_404, render, redirect
+from django.views.decorators.http import require_POST
 from django.core.mail import EmailMessage
 from django.template.loader import render_to_string
 from django.http import JsonResponse
 
 from cart.models import CartItem
 from .forms import OrderForm
-from .models import Order, Payment
+from .models import Order, OrderProduct, Payment
 from store.models import Product
 
 # Create your views here.
 
 
+# payments records the payment for an order, moves the cart into the order,
+# reduces stock, and emails the customer a receipt.
+@login_required(login_url='login')
+@require_POST
 def payments(request):
     body = json.loads(request.body)
-    order = Order.objects.get(user=request.user, is_ordered=False, order_number=body['orderID'])
+    order = get_object_or_404(
+        Order, user=request.user, is_ordered=False, order_number=body["orderID"]
+    )
 
     # Store transaction details inside payment model.
     payment = Payment(
@@ -46,11 +55,7 @@ def payments(request):
         orderproduct.ordered = True
         orderproduct.save()
 
-        cart_item = CartItem.objects.get(id=item.id)
-        product_variation = cart_item.variations.all()
-        orderproduct = OrderProduct.objects.get(id=orderproduct.id)
-        orderproduct.variations.set(product_variation)
-        orderproduct.save()
+        orderproduct.variations.set(item.variation.all())
 
         # Reduce the quantity of the sold products
         product = Product.objects.get(id=item.product_id)
@@ -63,7 +68,7 @@ def payments(request):
 
     # Send order recieved email to customer
     mail_subject = 'Thank you for your order!'
-    message = render_to_string('orders/order_recieved_email.html', {
+    message = render_to_string('orders/order_received_email.html', {
         'user': request.user,
         'order': order,
     })
@@ -81,6 +86,7 @@ def payments(request):
 
 
 # place_order handles the POST request of placing order for a product from the store.
+@login_required(login_url='login')
 def place_order(request, total=0, quantity=0,):
     current_user = request.user
 
@@ -118,13 +124,8 @@ def place_order(request, total=0, quantity=0,):
             data.tax = tax
             data.ip = request.META.get('REMOTE_ADDR')
             data.save()
-             # Generate order number
-            yr = int(datetime.date.today().strftime('%Y'))
-            dt = int(datetime.date.today().strftime('%d'))
-            mt = int(datetime.date.today().strftime('%m'))
-            d = datetime.date(yr,mt,dt)
-            current_date = d.strftime("%Y%m%d") #20210305
-            order_number = current_date + str(data.id)
+            # Generate order number, e.g. 20210305 + order id.
+            order_number = datetime.date.today().strftime('%Y%m%d') + str(data.id)
             data.order_number = order_number
             data.save()
 
@@ -137,8 +138,8 @@ def place_order(request, total=0, quantity=0,):
                 'grand_total': grand_total,
             }
             return render(request=request, template_name='orders/payments.html', context=context)
-    else:
-        return redirect('checkout') 
+        messages.error(request, 'Please check your billing details and try again.')
+    return redirect('checkout')
 
          
 
