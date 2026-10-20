@@ -3,7 +3,7 @@ from urllib.parse import parse_qs, urlparse
 from django.shortcuts import render, redirect
 from django.contrib import messages, auth
 from django.contrib.auth.decorators import login_required
-from . forms import LoginForm, RegistrationForm
+from . forms import LoginForm, RegistrationForm, UserForm, UserProfileForm
 from .models import Account, UserProfile
 from orders.models import Order, OrderProduct
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -172,7 +172,7 @@ def dashboard(request):
     orders = Order.objects.order_by('-created_at').filter(user_id=request.user.id, is_ordered=True)
     orders_count = orders.count()
 
-    userprofile = UserProfile.objects.get(user_id=request.user.id)
+    userprofile, _ = UserProfile.objects.get_or_create(user=request.user)
     context = {
         'orders_count': orders_count,
         'userprofile': userprofile,
@@ -257,7 +257,7 @@ def my_orders(request):
 
 @login_required(login_url='login')
 def edit_profile(request):
-    userprofile = get_object_or_404(UserProfile, user=request.user)
+    userprofile, _ = UserProfile.objects.get_or_create(user=request.user)
     if request.method == 'POST':
         user_form = UserForm(request.POST, instance=request.user)
         profile_form = UserProfileForm(request.POST, request.FILES, instance=userprofile)
