@@ -24,7 +24,7 @@ from cart.models import Cart, CartItem
 # register handles the POST request to register a user.
 def register(request):
     if request.method == 'POST':
-        form =  form = RegistrationForm(request.POST)
+        form = RegistrationForm(request.POST)
         if form.is_valid():
             first_name = form.cleaned_data['first_name']
             last_name = form.cleaned_data['last_name']
@@ -41,7 +41,7 @@ def register(request):
                                                 email=email,
                                                 password=password)
             user.phone_no = phone_no
-            user.save(self)
+            user.save()
 
 
             # Create a user profile
@@ -53,7 +53,7 @@ def register(request):
             # USER ACTIVATION
             current_site = get_current_site(request)
             mail_subject = "Follow the link to activate your account"
-            message = render_to_string('aaccounts/account_verification_email.html', {
+            message = render_to_string('accounts/account_verification_email.html', {
                 "user": user,
                 "domain": current_site,
                 'uid': urlsafe_base64_encode(force_bytes(user.pk)),
@@ -64,7 +64,7 @@ def register(request):
             send_email.send()
             return redirect('/accounts/login/?command=verification&email='+email)
     else:
-        form = RegistrationForm
+        form = RegistrationForm()
         
     context = {
         'form': form
