@@ -20,4 +20,4 @@ test:
 
 # Lint the Django apps.
 lint:
-	python3 -m ruff check accounts cart orders store
+	python3 -m ruff check .

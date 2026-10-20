@@ -1,0 +1,6 @@
+target-version = "py311"
+extend-exclude = ["*/migrations/*", "static", "salken/static"]
+
+[lint]
+# Pyflakes catches undefined names and unused imports; E9 catches syntax errors.
+select = ["E9", "F"]
