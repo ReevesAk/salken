@@ -1,5 +1,6 @@
-from django.shortcuts import render, get_object_or_404
-from django.core.paginator import EmptyPage, PageNotAnInteger, Paginator
+from django.contrib import messages
+from django.shortcuts import render, get_object_or_404, redirect
+from django.core.paginator import Paginator
 from django.db.models import Q
 
 
@@ -20,42 +21,40 @@ def store(request, category_slug=None):
 
     if category_slug != None:
         categories = get_object_or_404(Category, slug=category_slug)
-        products = Product.objects.filter(category=categories, is_available=True)
+        products = Product.objects.filter(category=categories, is_available=True).order_by('id')
         paginator = Paginator(object_list=products, per_page=1  )
         page    = request.GET.get('page')
         paged_product = paginator.get_page(page)
-        product_count = products.count()
     else:     
         products = Product.objects.all().filter(is_available=True).order_by('id')
         paginator = Paginator(object_list=products, per_page=6)
         page    = request.GET.get('page')
         paged_product = paginator.get_page(page)
-        product_count = products.count()    
 
     context = {
         'products': paged_product,
+        'product_count': products.count(),
     }
     return render(request=request, template_name='store/store.html', context=context)
 
 
 # product_detail handles the logic of the details displayed about a product as
 #  well as how it is displayed.
-def product_detail(request):
-    try:
-        single_product = Product.objects.get(category__slug=category_slug, slug=product_slug)
-        # cart__cart_id referbeces the Cart model as a foreignkey in CartItem model.
-        in_cart = CartItem.objects.filter(cart__cart_id=_cart_id(request), product=single_product).exists()
-        return
-    except Exception as e:                                
-        raise e
-
+def product_detail(request, category_slug, product_slug):
+    single_product = get_object_or_404(
+        Product, category__slug=category_slug, slug=product_slug
+    )
     if request.user.is_authenticated:
-        try:
-            orderproduct = OrderProduct.objects.filter(user=request.user, product_id=single_product.id).exists()
-        except OrderProduct.DoesNotExist:
-            orderproduct = None
+        in_cart = CartItem.objects.filter(user=request.user, product=single_product).exists()
+        orderproduct = OrderProduct.objects.filter(
+            user=request.user, product_id=single_product.id
+        ).exists()
     else:
-        orderproduct = None    
+        # cart__cart_id referbeces the Cart model as a foreignkey in CartItem model.
+        in_cart = CartItem.objects.filter(
+            cart__cart_id=_cart_id(request), product=single_product
+        ).exists()
+        orderproduct = False
 
     # Get the reviews
     reviews = ReviewRating.objects.filter(product_id=single_product.id, status=True)
@@ -76,18 +75,19 @@ def product_detail(request):
 
 # search handles the search requests for products made by users.
 def search(request):
+    products = Product.objects.none()
 
-    # Check if the GET request contains the word 'keyword', and 
-    # it if does, save the value in the keyword variable.
-    if "keyword" in request.GET:
-        keyword = request.GET('keyword')
-        if keyword:
-            # Q is a django feaure used for combining two or more querysets in a GET request.
-            product = Product.objects.order_by('-created_date').filter(Q(description__icontains=keyword) | Q(product_name__icontains=keyword))
-            product_count = products.count()
+    # Search only when the GET request contains a non-empty 'keyword'.
+    keyword = request.GET.get('keyword', '').strip()
+    if keyword:
+        # Q is a django feaure used for combining two or more querysets in a GET request.
+        products = Product.objects.order_by('-added_at').filter(
+            Q(description__icontains=keyword) | Q(product_name__icontains=keyword),
+            is_available=True,
+        )
     context = {
-        'products': product,
-        'product_count': product_count,
+        'products': products,
+        'product_count': products.count(),
     }
     return render(request=request, template_name='store/store.html', context=context)
 
