@@ -1,4 +1,5 @@
 from django.contrib import messages
+from django.contrib.auth.decorators import login_required
 from django.shortcuts import render, get_object_or_404, redirect
 from django.core.paginator import Paginator
 from django.db.models import Q
@@ -92,25 +93,28 @@ def search(request):
     return render(request=request, template_name='store/store.html', context=context)
 
 
+# submit_review creates the user's review of a product, or updates it if
+# they have already reviewed it.
+@login_required(login_url='login')
 def submit_review(request, product_id):
-    url = request.META.get('HTTP_REFERER')
-    if request.method == 'POST':
-        try:
-            reviews = ReviewRating.objects.get(user__id=request.user.id, product__id=product_id)
-            form = ReviewForm(request.POST, instance=reviews)
-            form.save()
-            messages.success(request, 'Thank you! Your review has been updated.')
-            return redirect(url)
-        except ReviewRating.DoesNotExist:
-            form = ReviewForm(request.POST)
-            if form.is_valid():
-                data = ReviewRating()
-                data.subject = form.cleaned_data['subject']
-                data.rating = form.cleaned_data['rating']
-                data.review = form.cleaned_data['review']
-                data.ip = request.META.get('REMOTE_ADDR')
-                data.product_id = product_id
-                data.user_id = request.user.id
-                data.save()
-                messages.success(request, 'Thank you! Your review has been submitted.')
-                return redirect(url)
+    product = get_object_or_404(Product, id=product_id)
+    url = request.META.get('HTTP_REFERER') or product.get_url()
+    if request.method != 'POST':
+        return redirect(url)
+
+    existing = ReviewRating.objects.filter(user=request.user, product=product).first()
+    form = ReviewForm(request.POST, instance=existing)
+    if not form.is_valid():
+        messages.error(request, 'Please provide a rating for your review.')
+        return redirect(url)
+
+    review = form.save(commit=False)
+    review.product = product
+    review.user = request.user
+    review.ip = request.META.get('REMOTE_ADDR')
+    review.save()
+    if existing:
+        messages.success(request, 'Thank you! Your review has been updated.')
+    else:
+        messages.success(request, 'Thank you! Your review has been submitted.')
+    return redirect(url)
