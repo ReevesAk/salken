@@ -1,15 +1,17 @@
 asgiref==3.6.0
-backports.zoneinfo==0.2.1
+boto3==1.26.137
 certifi==2022.12.7
 charset-normalizer==3.1.0
 Django==4.1.5
 django-admin-honeypot==1.1.0
 django-admin-thumbnails==0.2.6
+django-storages==1.13.2
 idna==3.4
 Pillow==9.4.0
+psycopg2-binary==2.9.6
 python-decouple==3.8
 requests==2.28.2
 six==1.16.0
 sqlparse==0.4.3
+tzdata==2023.3; sys_platform == "win32"
 urllib3==1.26.15
-psycopg2-binary==2.9.6
