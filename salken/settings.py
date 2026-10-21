@@ -189,4 +189,7 @@ if AWS_STORAGE_BUCKET_NAME:
     AWS_LOCATION = 'static'
 
     STATIC_URL = 'https://%s/%s/' % (AWS_S3_CUSTOM_DOMAIN, AWS_LOCATION)
-    STATICFILES_STORAGE = 'storages.backends.s3boto3.S3Boto3Storage'
+    STORAGES = {
+        'default': {'BACKEND': 'django.core.files.storage.FileSystemStorage'},
+        'staticfiles': {'BACKEND': 'storages.backends.s3boto3.S3Boto3Storage'},
+    }
