@@ -78,11 +78,15 @@ file via python-decouple. See `.env.example`.
 - `requirements-dev.txt` adds the test and lint tools.
 - `requirements.lock` pins every transitive dependency. Install from it.
 
-After you change `requirements*.txt`, regenerate the lockfile:
+After you change `requirements*.txt`, regenerate the lockfile. `--exclude-newer`
+skips releases published in the last two weeks, a basic guard against
+compromised packages that are caught and pulled soon after release:
 
 ```sh
 pip install uv
-uv pip compile --python-version 3.11 --universal requirements-dev.txt -o requirements.lock
+uv pip compile --upgrade --python-version 3.11 --universal \
+  --exclude-newer "$(date -u -v-14d +%Y-%m-%d 2>/dev/null || date -u -d '14 days ago' +%Y-%m-%d)" \
+  requirements-dev.txt -o requirements.lock
 ```
 
 ## Deployment
