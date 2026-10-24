@@ -74,3 +74,19 @@ jobs:
 
       - name: Build image
         run: docker build -t salken .
+
+  audit:
+    # Fails when any locked dependency has a published vulnerability.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install pip-audit
+        run: pip install pip-audit==2.10.1
+
+      - name: Audit requirements.lock
+        run: pip-audit -r requirements.lock --no-deps --disable-pip
