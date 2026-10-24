@@ -3,7 +3,7 @@ from urllib.parse import parse_qs, urlparse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages, auth
 from django.contrib.auth.decorators import login_required
-from . forms import LoginForm, RegistrationForm, UserForm, UserProfileForm
+from .forms import LoginForm, RegistrationForm, UserForm, UserProfileForm
 from .models import Account, UserProfile
 from orders.models import Order, OrderProduct
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -21,6 +21,7 @@ from cart.models import Cart, CartItem
 
 # Create your views here.
 
+
 # register handles the POST request to register a user.
 def register(request):
     if request.method == 'POST':
@@ -35,14 +36,14 @@ def register(request):
             username = first_name + last_name
 
             user = Account.objects.create_user(
-                                                first_name=first_name, 
-                                                last_name=last_name, 
-                                                username=username,
-                                                email=email,
-                                                password=password)
+                first_name=first_name,
+                last_name=last_name,
+                username=username,
+                email=email,
+                password=password,
+            )
             user.phone_no = phone_no
             user.save()
-
 
             # Create a user profile
             profile = UserProfile()
@@ -53,23 +54,26 @@ def register(request):
             # USER ACTIVATION
             current_site = get_current_site(request)
             mail_subject = "Follow the link to activate your account"
-            message = render_to_string('accounts/account_verification_email.html', {
-                "user": user,
-                "domain": current_site,
-                'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-                'token': default_token_generator.make_token(user), 
-            })
+            message = render_to_string(
+                'accounts/account_verification_email.html',
+                {
+                    "user": user,
+                    "domain": current_site,
+                    'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+                    'token': default_token_generator.make_token(user),
+                },
+            )
             to_email = email
             send_email = EmailMessage(mail_subject, message, to=[to_email])
             send_email.send()
-            return redirect('/accounts/login/?command=verification&email='+email)
+            return redirect('/accounts/login/?command=verification&email=' + email)
     else:
         form = RegistrationForm()
-        
-    context = {
-        'form': form
-    }
-    return render(request=request, template_name='accounts/register.html', context=context)
+
+    context = {'form': form}
+    return render(
+        request=request, template_name='accounts/register.html', context=context
+    )
 
 
 # _merge_session_cart moves the anonymous session cart into the user's cart.
@@ -86,9 +90,11 @@ def _merge_session_cart(request, user):
         variation_ids = set(item.variation.values_list('id', flat=True))
         match = next(
             (
-                existing for existing in user_items
+                existing
+                for existing in user_items
                 if existing.product_id == item.product_id
-                and set(existing.variation.values_list('id', flat=True)) == variation_ids
+                and set(existing.variation.values_list('id', flat=True))
+                == variation_ids
             ),
             None,
         )
@@ -140,20 +146,20 @@ def login(request):
 
 
 # logout handles the POST request to logout a user.
-@login_required(login_url = 'login')
+@login_required(login_url='login')
 def logout(request):
     auth.logout(request)
     messages.success(request, "You are logged out")
     return redirect("login")
-    render(request=request, template_name='accounts/logout.html')       
+    render(request=request, template_name='accounts/logout.html')
 
 
 # activate handles the GET response for account verification via email.
-def activate(request, uidb64, token ):
+def activate(request, uidb64, token):
     try:
         uid = urlsafe_base64_decode(uidb64).decode()
         user = Account._default_manager.get(pk=uid)
-    except(TypeError, ValueError, OverflowError, Account.DoesNotExist):
+    except (TypeError, ValueError, OverflowError, Account.DoesNotExist):
         user = None
 
     if user is not None and default_token_generator.check_token(user, token):
@@ -163,13 +169,15 @@ def activate(request, uidb64, token ):
         return redirect('login')
     else:
         messages.error(request, 'Invalid activation link')
-        return redirect('register')    
+        return redirect('register')
 
 
 # dashboard handles the forgot password logic and view.
-@login_required(login_url = 'login')
+@login_required(login_url='login')
 def dashboard(request):
-    orders = Order.objects.order_by('-created_at').filter(user_id=request.user.id, is_ordered=True)
+    orders = Order.objects.order_by('-created_at').filter(
+        user_id=request.user.id, is_ordered=True
+    )
     orders_count = orders.count()
 
     userprofile, _ = UserProfile.objects.get_or_create(user=request.user)
@@ -190,17 +198,22 @@ def forgotPassword(request):
             # Reset password email
             current_site = get_current_site(request)
             mail_subject = 'Reset Your Password'
-            message = render_to_string('accounts/reset_password_email.html', {
-                'user': user,
-                'domain': current_site,
-                'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-                'token': default_token_generator.make_token(user),
-            })
+            message = render_to_string(
+                'accounts/reset_password_email.html',
+                {
+                    'user': user,
+                    'domain': current_site,
+                    'uid': urlsafe_base64_encode(force_bytes(user.pk)),
+                    'token': default_token_generator.make_token(user),
+                },
+            )
             to_email = email
             send_email = EmailMessage(mail_subject, message, to=[to_email])
             send_email.send()
 
-            messages.success(request, 'Password reset email has been sent to your email address.')
+            messages.success(
+                request, 'Password reset email has been sent to your email address.'
+            )
             return redirect('login')
         else:
             messages.error(request, 'Account does not exist!')
@@ -208,13 +221,13 @@ def forgotPassword(request):
     return render(request, 'accounts/forgotPassword.html')
 
 
-# resetpassword_validate handles the validation of the validates the 
+# resetpassword_validate handles the validation of the validates the
 # paswword request.
 def resetpassword_validate(request, uidb64, token):
     try:
         uid = urlsafe_base64_decode(uidb64).decode()
         user = Account._default_manager.get(pk=uid)
-    except(TypeError, ValueError, OverflowError, Account.DoesNotExist):
+    except (TypeError, ValueError, OverflowError, Account.DoesNotExist):
         user = None
 
     if user is not None and default_token_generator.check_token(user, token):
@@ -223,7 +236,7 @@ def resetpassword_validate(request, uidb64, token):
         return redirect('resetPassword')
     else:
         messages.error(request, 'This link has been expired!')
-        return redirect('login')    
+        return redirect('login')
 
 
 # resetPassword handles the reset password logic and view.
@@ -253,19 +266,23 @@ def resetPassword(request):
 
 @login_required(login_url='login')
 def my_orders(request):
-    orders = Order.objects.filter(user=request.user, is_ordered=True).order_by('-created_at')
+    orders = Order.objects.filter(user=request.user, is_ordered=True).order_by(
+        '-created_at'
+    )
     context = {
         'orders': orders,
     }
     return render(request, 'accounts/my_orders.html', context)
-       
+
 
 @login_required(login_url='login')
 def edit_profile(request):
     userprofile, _ = UserProfile.objects.get_or_create(user=request.user)
     if request.method == 'POST':
         user_form = UserForm(request.POST, instance=request.user)
-        profile_form = UserProfileForm(request.POST, request.FILES, instance=userprofile)
+        profile_form = UserProfileForm(
+            request.POST, request.FILES, instance=userprofile
+        )
         if user_form.is_valid() and profile_form.is_valid():
             user_form.save()
             profile_form.save()
@@ -279,7 +296,7 @@ def edit_profile(request):
         'profile_form': profile_form,
         'userprofile': userprofile,
     }
-    return render(request, 'accounts/edit_profile.html', context)  
+    return render(request, 'accounts/edit_profile.html', context)
 
 
 @login_required(login_url='login')
@@ -306,7 +323,7 @@ def change_password(request):
             messages.error(request, 'Password does not match!')
             return redirect('change_password')
     return render(request, 'accounts/change_password.html')
-     
+
 
 @login_required(login_url='login')
 def order_detail(request, order_id):

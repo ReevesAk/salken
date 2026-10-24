@@ -30,8 +30,11 @@ def test_thumbnail_is_empty_without_picture(profile_admin, user):
 
 def test_profile_changelist_renders(client, user):
     admin = Account.objects.create_superuser(
-        first_name='Grace', last_name='Hopper', email='grace@example.com',
-        username='GraceHopper', password='cobol-1959',
+        first_name='Grace',
+        last_name='Hopper',
+        email='grace@example.com',
+        username='GraceHopper',
+        password='cobol-1959',
     )
     client.force_login(admin)
     UserProfile.objects.create(user=user, profile_picture='userprofile/a.png')

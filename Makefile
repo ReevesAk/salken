@@ -21,3 +21,8 @@ test:
 # Lint the Django apps.
 lint:
 	python3 -m ruff check .
+	python3 -m ruff format --check .
+
+# Format Python code.
+format:
+	python3 -m ruff format .

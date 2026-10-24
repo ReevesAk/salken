@@ -64,6 +64,7 @@ The image runs Django's development server and is for local use only.
 pytest                                                    # run the suite
 pytest --cov=accounts --cov=cart --cov=orders --cov=store # with coverage
 ruff check .                                              # lint
+ruff format .                                             # format
 ```
 
 Or run `make test` and `make lint`. CI (`.github/workflows/ci.yml`) runs the

@@ -25,5 +25,7 @@ class HealthCheckMiddleware:
                 cursor.execute('SELECT 1')
         except DatabaseError:
             logger.exception('Health check failed: database unavailable')
-            return JsonResponse({'status': 'error', 'database': 'unavailable'}, status=503)
+            return JsonResponse(
+                {'status': 'error', 'database': 'unavailable'}, status=503
+            )
         return JsonResponse({'status': 'ok', 'database': 'ok'})

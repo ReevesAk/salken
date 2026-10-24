@@ -29,11 +29,11 @@ def payments(request):
 
     # Store transaction details inside payment model.
     payment = Payment(
-        user = request.user,
-        payment_id = body['transID'],
-        payment_method = body['payment_method'],
-        amount_paid = order.order_total,
-        status = body['status'],
+        user=request.user,
+        payment_id=body['transID'],
+        payment_method=body['payment_method'],
+        amount_paid=order.order_total,
+        status=body['status'],
     )
     payment.save()
 
@@ -62,16 +62,18 @@ def payments(request):
         product.stock -= item.quantity
         product.save()
 
-
     # Clear cart
-    CartItem.objects.filter(user=request.user).delete()  
+    CartItem.objects.filter(user=request.user).delete()
 
     # Send order recieved email to customer
     mail_subject = 'Thank you for your order!'
-    message = render_to_string('orders/order_received_email.html', {
-        'user': request.user,
-        'order': order,
-    })
+    message = render_to_string(
+        'orders/order_received_email.html',
+        {
+            'user': request.user,
+            'order': order,
+        },
+    )
     to_email = request.user.email
     send_email = EmailMessage(mail_subject, message, to=[to_email])
     send_email.send()
@@ -80,14 +82,18 @@ def payments(request):
     data = {
         'order_number': order.order_number,
         'transID': payment.payment_id,
-    }  
+    }
 
     return JsonResponse(data)
 
 
 # place_order handles the POST request of placing order for a product from the store.
 @login_required(login_url='login')
-def place_order(request, total=0, quantity=0,):
+def place_order(
+    request,
+    total=0,
+    quantity=0,
+):
     current_user = request.user
 
     # If the cart count is less than or equal to 0, then redirect back to shop
@@ -99,10 +105,10 @@ def place_order(request, total=0, quantity=0,):
     grand_total = 0
     tax = 0
     for cart_item in cart_items:
-        total += (cart_item.product.price * cart_item.quantity)
+        total += cart_item.product.price * cart_item.quantity
         quantity += cart_item.quantity
-    tax = (2 * total)/100
-    grand_total = total + tax    
+    tax = (2 * total) / 100
+    grand_total = total + tax
 
     if request.method == 'POST':
         form = OrderForm(request.POST)
@@ -129,7 +135,9 @@ def place_order(request, total=0, quantity=0,):
             data.order_number = order_number
             data.save()
 
-            order = Order.objects.get(user=current_user, is_ordered=False, order_number=order_number)
+            order = Order.objects.get(
+                user=current_user, is_ordered=False, order_number=order_number
+            )
             context = {
                 'order': order,
                 'cart_items': cart_items,
@@ -137,11 +145,12 @@ def place_order(request, total=0, quantity=0,):
                 'tax': tax,
                 'grand_total': grand_total,
             }
-            return render(request=request, template_name='orders/payments.html', context=context)
+            return render(
+                request=request, template_name='orders/payments.html', context=context
+            )
         messages.error(request, 'Please check your billing details and try again.')
     return redirect('checkout')
 
-         
 
 def order_complete(request):
     order_number = request.GET.get('order_number')
@@ -167,4 +176,6 @@ def order_complete(request):
         }
         return render(request, 'orders/order_complete.html', context)
     except (Payment.DoesNotExist, Order.DoesNotExist):
-        return redirect('home',)
+        return redirect(
+            'home',
+        )

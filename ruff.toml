@@ -4,3 +4,7 @@ extend-exclude = ["*/migrations/*", "static", "salken/static"]
 [lint]
 # Pyflakes catches undefined names and unused imports; E9 catches syntax errors.
 select = ["E9", "F"]
+
+[format]
+# Keep the existing mix of quote styles to avoid churning every line.
+quote-style = "preserve"
