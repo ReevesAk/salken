@@ -1,12 +1,12 @@
-import requests
+from urllib.parse import parse_qs, urlparse
 
-from django.shortcuts import render, redirect
+from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages, auth
 from django.contrib.auth.decorators import login_required
-from . forms import RegistrationForm
+from . forms import LoginForm, RegistrationForm, UserForm, UserProfileForm
 from .models import Account, UserProfile
 from orders.models import Order, OrderProduct
-from django.http import HttpResponse
+from django.utils.http import url_has_allowed_host_and_scheme
 
 # Verification email
 from django.contrib.sites.shortcuts import get_current_site
@@ -24,7 +24,7 @@ from cart.models import Cart, CartItem
 # register handles the POST request to register a user.
 def register(request):
     if request.method == 'POST':
-        form =  form = RegistrationForm(request.POST)
+        form = RegistrationForm(request.POST)
         if form.is_valid():
             first_name = form.cleaned_data['first_name']
             last_name = form.cleaned_data['last_name']
@@ -41,7 +41,7 @@ def register(request):
                                                 email=email,
                                                 password=password)
             user.phone_no = phone_no
-            user.save(self)
+            user.save()
 
 
             # Create a user profile
@@ -53,7 +53,7 @@ def register(request):
             # USER ACTIVATION
             current_site = get_current_site(request)
             mail_subject = "Follow the link to activate your account"
-            message = render_to_string('aaccounts/account_verification_email.html', {
+            message = render_to_string('accounts/account_verification_email.html', {
                 "user": user,
                 "domain": current_site,
                 'uid': urlsafe_base64_encode(force_bytes(user.pk)),
@@ -64,7 +64,7 @@ def register(request):
             send_email.send()
             return redirect('/accounts/login/?command=verification&email='+email)
     else:
-        form = RegistrationForm
+        form = RegistrationForm()
         
     context = {
         'form': form
@@ -72,70 +72,71 @@ def register(request):
     return render(request=request, template_name='accounts/register.html', context=context)
 
 
+# _merge_session_cart moves the anonymous session cart into the user's cart.
+# Items whose product and variations already exist in the user's cart are
+# combined by adding their quantities.
+def _merge_session_cart(request, user):
+    try:
+        cart = Cart.objects.get(cart_id=_cart_id(request))
+    except Cart.DoesNotExist:
+        return
+
+    user_items = list(CartItem.objects.filter(user=user))
+    for item in CartItem.objects.filter(cart=cart):
+        variation_ids = set(item.variation.values_list('id', flat=True))
+        match = next(
+            (
+                existing for existing in user_items
+                if existing.product_id == item.product_id
+                and set(existing.variation.values_list('id', flat=True)) == variation_ids
+            ),
+            None,
+        )
+        if match is not None:
+            match.quantity += item.quantity
+            match.save()
+            item.delete()
+        else:
+            item.user = user
+            item.save()
+            user_items.append(item)
+
+
+# _get_next_url returns the ?next= target from the page the login form was
+# submitted from, if it points back to this site.
+def _get_next_url(request):
+    referer = request.META.get('HTTP_REFERER', '')
+    next_url = parse_qs(urlparse(referer).query).get('next', [None])[0]
+    if next_url and url_has_allowed_host_and_scheme(
+        next_url, allowed_hosts={request.get_host()}, require_https=request.is_secure()
+    ):
+        return next_url
+    return None
+
+
 # login handles the POST request to login a user.
 def login(request):
     if request.method == "POST":
-        email = request.POST['email']
-        password = request.POST['password']
+        form = LoginForm(request.POST)
+        if not form.is_valid():
+            messages.error(request, "Please enter a valid email address and password.")
+            return redirect('login')
 
-        user = auth.authenticate(email=email, password=password)
-
-        if user is not None:
-            try:
-                cart = Cart.objects.get(cart_id=_card_id(request))
-                cart_item_exists = CartItem.objects.filter(cart=cart).exists()
-                if cart_item_exists:
-                    cart_item = CartItem.objects.filter(cart=cart)
-
-                    # get product variation by cart_id.
-                    product_variation = []
-                    for item in cart_item:
-                        variation = item.variation.all()
-                        product_variation.append(list(variation))
-
-                    # get the cart items from the user to access his poduct varaition.
-                    cart_item = CartItem.objects.filter(user=user)
-               
-                    ex_var_list = []
-                    id = []
-                    for item in cart_item:
-                        existing_variations = item.variations.all()
-                        ex_var_list.append(existing_variations)
-                        id.append(item.id)
-
-                    for pr in product_variation:
-                        if pr in ex_var_list:
-                            index = ex_var_list.index(pr)
-                            item_id = id[index]
-                            item = CartItem.objects.get(id=item_id)
-                            item.quantity += 1
-                            item.user = user
-                            item.save()
-                        else:
-                            cart_item = CartItem.objects.filter(cart=cart)
-                            for item in cart_item:
-                                item.user = user
-                                item.save()    
-                  
-            except:
-                pass
-
-            auth.login(request, user)
-            messages.success(request, "Login successful!")
-            url = request.META.get('HTTP_REFERER')
-            try:
-                query = requests.utils.urlparse(url=url)
-                params = dict(x.split('=') for x in query.split('&'))
-                if "next" in params:
-                    nextPage = params["next"]
-                    return redirect(nextPage)
-            except:
-                return redirect('dashboard')
-
-        else:
+        user = auth.authenticate(
+            request,
+            email=form.cleaned_data['email'],
+            password=form.cleaned_data['password'],
+        )
+        if user is None:
             messages.error(request, "Invalid login credentials!")
             return redirect('login')
-    return render(request=request, template_name='accounts/login.html')    
+
+        # Merge before auth.login(), which rotates the session key.
+        _merge_session_cart(request, user)
+        auth.login(request, user)
+        messages.success(request, "Login successful!")
+        return redirect(_get_next_url(request) or 'dashboard')
+    return render(request=request, template_name='accounts/login.html')
 
 
 # logout handles the POST request to logout a user.
@@ -171,7 +172,7 @@ def dashboard(request):
     orders = Order.objects.order_by('-created_at').filter(user_id=request.user.id, is_ordered=True)
     orders_count = orders.count()
 
-    userprofile = UserProfile.objects.get(user_id=request.user.id)
+    userprofile, _ = UserProfile.objects.get_or_create(user=request.user)
     context = {
         'orders_count': orders_count,
         'userprofile': userprofile,
@@ -182,7 +183,7 @@ def dashboard(request):
 # forgotPassword handles the forgot password logic and view.
 def forgotPassword(request):
     if request.method == 'POST':
-        email = request.POST['email']
+        email = request.POST.get('email', '')
         if Account.objects.filter(email=email).exists():
             user = Account.objects.get(email__exact=email)
 
@@ -227,15 +228,20 @@ def resetpassword_validate(request, uidb64, token):
 
 # resetPassword handles the reset password logic and view.
 def resetPassword(request):
-    if request.method == 'POST':
-        password = request.POST['password']
-        confirm_password = request.POST['confirm_password']
+    uid = request.session.get('uid')
+    if uid is None:
+        messages.error(request, 'Please use the link in your password reset email.')
+        return redirect('forgotPassword')
 
-        if password == confirm_password:
-            uid = request.session.get('uid')
+    if request.method == 'POST':
+        password = request.POST.get('password', '')
+        confirm_password = request.POST.get('confirm_password', '')
+
+        if password and password == confirm_password:
             user = Account.objects.get(pk=uid)
             user.set_password(password)
             user.save()
+            del request.session['uid']
             messages.success(request, 'Password reset successful')
             return redirect('login')
         else:
@@ -256,7 +262,7 @@ def my_orders(request):
 
 @login_required(login_url='login')
 def edit_profile(request):
-    userprofile = get_object_or_404(UserProfile, user=request.user)
+    userprofile, _ = UserProfile.objects.get_or_create(user=request.user)
     if request.method == 'POST':
         user_form = UserForm(request.POST, instance=request.user)
         profile_form = UserProfileForm(request.POST, request.FILES, instance=userprofile)
@@ -304,8 +310,9 @@ def change_password(request):
 
 @login_required(login_url='login')
 def order_detail(request, order_id):
-    order_detail = OrderProduct.objects.filter(order__order_number=order_id)
-    order = Order.objects.get(order_number=order_id)
+    # Scope to the current user so customers cannot view each other's orders.
+    order = get_object_or_404(Order, order_number=order_id, user=request.user)
+    order_detail = OrderProduct.objects.filter(order=order)
     subtotal = 0
     for i in order_detail:
         subtotal += i.product_price * i.quantity

@@ -13,3 +13,11 @@ migrate:
 # Run django collectstatic
 collectstatic:
 	python3 manage.py collectstatic
+
+# Run the test suite with coverage.
+test:
+	python3 -m pytest --cov=accounts --cov=cart --cov=orders --cov=store
+
+# Lint the Django apps.
+lint:
+	python3 -m ruff check .
