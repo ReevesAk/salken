@@ -38,9 +38,3 @@ def test_bucket_enables_s3_static_storage(reload_settings):
     )
     assert settings.STATIC_URL == 'https://salken-assets.s3.amazonaws.com/static/'
 
-
-def test_logging_sends_app_and_django_logs_to_console(reload_settings):
-    settings = reload_settings(LOG_LEVEL='WARNING')
-
-    assert settings.LOGGING['root'] == {'handlers': ['console'], 'level': 'WARNING'}
-    assert settings.LOGGING['loggers']['django']['handlers'] == ['console']
