@@ -52,6 +52,8 @@ python-dateutil==2.9.0.post0
     # via botocore
 python-decouple==3.8
     # via -r requirements.txt
+python-json-logger==4.2.0
+    # via -r requirements.txt
 ruff==0.4.4
     # via -r requirements-dev.txt
 s3transfer==0.19.2

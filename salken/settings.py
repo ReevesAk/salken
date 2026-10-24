@@ -189,19 +189,34 @@ MESSAGE_TAGS = {
 }
 
 # Logging: everything goes to stdout, which Elastic Beanstalk collects.
+# LOG_FORMAT is 'json' (one JSON object per line, for log search) or 'text'.
+# It defaults to text locally and JSON when DEBUG is off.
 LOG_LEVEL = config('LOG_LEVEL', default='INFO')
+LOG_FORMAT = config('LOG_FORMAT', default='text' if DEBUG else 'json')
+if LOG_FORMAT not in ('json', 'text'):
+    raise ImproperlyConfigured("LOG_FORMAT must be 'json' or 'text'.")
 LOGGING = {
     'version': 1,
     'disable_existing_loggers': False,
     'formatters': {
-        'standard': {
+        'text': {
             'format': '%(asctime)s %(levelname)s %(name)s: %(message)s',
+        },
+        'json': {
+            '()': 'pythonjsonlogger.json.JsonFormatter',
+            'format': '%(asctime)s %(levelname)s %(name)s %(message)s',
+            'rename_fields': {
+                'asctime': 'time',
+                'levelname': 'level',
+                'name': 'logger',
+            },
         },
     },
     'handlers': {
         'console': {
             'class': 'logging.StreamHandler',
-            'formatter': 'standard',
+            'stream': 'ext://sys.stdout',
+            'formatter': LOG_FORMAT,
         },
     },
     'root': {

@@ -1,8 +1,9 @@
 # Direct runtime dependencies. Transitive versions are pinned in requirements.lock.
 boto3==1.43.108
-Django==5.2.18
 django-admin-thumbnails==1.0.0
 django-storages==1.14.6
+Django==5.2.18
 Pillow==13.0.0
 psycopg2-binary==2.9.13
 python-decouple==3.8
+python-json-logger==4.2.0

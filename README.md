@@ -85,7 +85,11 @@ database is unreachable. Point the load balancer health check at it. It
 responds before Django's host validation, so checks addressed to the instance
 IP work without adding the IP to `ALLOWED_HOSTS`.
 
-Application and Django logs go to stdout at `LOG_LEVEL` (default `INFO`).
+Application and Django logs go to stdout at `LOG_LEVEL` (default `INFO`). With
+`DEBUG=False` each line is a JSON object (`time`, `level`, `logger`, `message`,
+plus `exc_info` for exceptions), which CloudWatch Logs Insights can query.
+Locally, logs are plain text. Set `LOG_FORMAT=json` or `LOG_FORMAT=text` to
+override.
 
 ## Configuration
 
