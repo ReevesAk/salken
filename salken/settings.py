@@ -110,15 +110,18 @@ AUTH_USER_MODEL = 'accounts.Account'
 # Database
 # https://docs.djangoproject.com/en/4.1/ref/settings/#databases
 
-if 'RDS_DB_NAME' in os.environ:
+# PostgreSQL (Amazon RDS) when RDS_DB_NAME is set, in the environment or .env;
+# SQLite otherwise.
+RDS_DB_NAME = config('RDS_DB_NAME', default='')
+if RDS_DB_NAME:
     DATABASES = {
         'default': {
             'ENGINE': 'django.db.backends.postgresql',
-            'NAME': os.environ['RDS_DB_NAME'],
-            'USER': os.environ['RDS_USERNAME'],
-            'PASSWORD': os.environ['RDS_PASSWORD'],
-            'HOST': os.environ['RDS_HOSTNAME'],
-            'PORT': os.environ['RDS_PORT'],
+            'NAME': RDS_DB_NAME,
+            'USER': config('RDS_USERNAME'),
+            'PASSWORD': config('RDS_PASSWORD'),
+            'HOST': config('RDS_HOSTNAME', default='localhost'),
+            'PORT': config('RDS_PORT', default='5432'),
         }
     }
 else:

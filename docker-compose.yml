@@ -3,6 +3,9 @@
 services:
   db:
     image: postgres:16-alpine
+    # Published so a local runserver can use it: docker compose up -d db
+    ports:
+      - "5432:5432"
     environment:
       POSTGRES_DB: salken
       POSTGRES_USER: salken

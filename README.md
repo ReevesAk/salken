@@ -56,6 +56,9 @@ docker compose run --rm web pytest     # test suite against PostgreSQL
 docker compose down -v                 # stop and delete the database volume
 ```
 
+To run only the database and use it from a local `runserver`, start it with
+`docker compose up -d db` and set `RDS_DB_NAME=salken` in `.env`.
+
 The image runs Django's development server and is for local use only.
 
 ## Running tests
