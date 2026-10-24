@@ -59,6 +59,15 @@ lint and test steps on every push to `master` and on every pull request.
 Tests live in each app's `tests/` package. Shared fixtures (`product`,
 `variations`, `user`, `password`) are in the top-level `conftest.py`.
 
+## Health checks and logging
+
+`GET /health/` returns `{"status": "ok", "database": "ok"}`, or a 503 when the
+database is unreachable. Point the load balancer health check at it. It
+responds before Django's host validation, so checks addressed to the instance
+IP work without adding the IP to `ALLOWED_HOSTS`.
+
+Application and Django logs go to stdout at `LOG_LEVEL` (default `INFO`).
+
 ## Configuration
 
 `salken/settings.py` reads these values from the environment, or from a `.env`
