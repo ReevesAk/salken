@@ -37,4 +37,3 @@ def test_bucket_enables_s3_static_storage(reload_settings):
         'storages.backends.s3boto3.S3Boto3Storage'
     )
     assert settings.STATIC_URL == 'https://salken-assets.s3.amazonaws.com/static/'
-
