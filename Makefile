@@ -16,7 +16,7 @@ collectstatic:
 
 # Run the test suite with coverage.
 test:
-	python3 -m pytest --cov=accounts --cov=cart --cov=orders --cov=store
+	python3 -m pytest --cov=accounts --cov=cart --cov=category --cov=orders --cov=store --cov=salken
 
 # Lint the Django apps.
 lint:
