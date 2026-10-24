@@ -89,6 +89,11 @@ uv pip compile --upgrade --python-version 3.11 --universal \
   requirements-dev.txt -o requirements.lock
 ```
 
+Dependabot opens one grouped update PR per week for Python packages and
+GitHub Actions. It can bump `requirements*.txt` but not the lockfile, so
+`tests/test_requirements.py` fails on its PRs until you check out the branch,
+run the command above, and push the refreshed `requirements.lock`.
+
 ## Deployment
 
 The project deploys to AWS Elastic Beanstalk (`.ebextensions/django.config`),
