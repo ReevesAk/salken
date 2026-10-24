@@ -66,8 +66,10 @@ file via python-decouple. See `.env.example`.
 
 | Variable                  | Default                     | Purpose                              |
 |---------------------------|-----------------------------|--------------------------------------|
-| `SECRET_KEY`              | insecure development key    | **Set in production.**               |
 | `DEBUG`                   | `True`                      | Set to `False` in production.        |
+| `SECRET_KEY`              | insecure development key    | Required when `DEBUG=False`; the app refuses to start without it. |
+| `HTTPS`                   | `False`                     | Set to `True` once served over TLS: HTTPS redirect, secure cookies, and HSTS. |
+| `SECURE_HSTS_SECONDS`     | `3600`                      | Raise to `31536000` after HTTPS is confirmed working. |
 | `ALLOWED_HOSTS`           | localhost + the EB hostname | Comma-separated.                     |
 | `RDS_DB_NAME`             | unset (uses SQLite)         | When set, PostgreSQL is used along with `RDS_USERNAME`, `RDS_PASSWORD`, `RDS_HOSTNAME`, `RDS_PORT`. |
 | `AWS_STORAGE_BUCKET_NAME` | unset (local static files)  | When set, static files go to S3, using `AWS_ACCESS_KEY_ID` and `AWS_SECRET_ACCESS_KEY`. |
@@ -94,4 +96,10 @@ uv pip compile --upgrade --python-version 3.11 --universal \
 The project deploys to AWS Elastic Beanstalk (`.ebextensions/django.config`),
 with PostgreSQL on RDS and static files on S3. In the Elastic Beanstalk
 environment, set `SECRET_KEY`, `DEBUG=False`, the `RDS_*` variables, and the
-`AWS_*` variables.
+`AWS_*` variables, plus `HTTPS=True` if the environment has a TLS listener.
+
+To check a production configuration locally:
+
+```sh
+DEBUG=False HTTPS=True SECRET_KEY=<long random value> python manage.py check --deploy
+```

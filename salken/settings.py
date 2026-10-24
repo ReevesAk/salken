@@ -13,25 +13,44 @@ https://docs.djangoproject.com/en/4.1/ref/settings/
 from pathlib import Path
 import os
 from decouple import Csv, config
+from django.core.exceptions import ImproperlyConfigured
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
 
-# Quick-start development settings - unsuitable for production
-# See https://docs.djangoproject.com/en/4.1/howto/deployment/checklist/
-
-# SECURITY WARNING: keep the secret key used in production secret!
-SECRET_KEY = config('SECRET_KEY', default='django-insecure-local-dev-only')
+# Deployment checklist: https://docs.djangoproject.com/en/5.2/howto/deployment/checklist/
 
 # SECURITY WARNING: don't run with debug turned on in production!
-DEBUG = config('DEBUG', default=True, cast=bool) # True
+DEBUG = config('DEBUG', default=True, cast=bool)
+
+# SECURITY WARNING: keep the secret key used in production secret!
+# The fallback key is only allowed for local development.
+SECRET_KEY = config('SECRET_KEY', default='')
+if not SECRET_KEY:
+    if not DEBUG:
+        raise ImproperlyConfigured('SECRET_KEY must be set when DEBUG is False.')
+    SECRET_KEY = 'django-insecure-local-dev-only'
 
 ALLOWED_HOSTS = config(
     'ALLOWED_HOSTS',
     default='localhost,127.0.0.1,django-salken-env.eba-xfbnb9g4.us-east-1.elasticbeanstalk.com',
     cast=Csv(),
 )
+
+# Set HTTPS=True once the site is served over TLS. The load balancer
+# terminates TLS and forwards the original scheme in X-Forwarded-Proto.
+HTTPS = config('HTTPS', default=False, cast=bool)
+if HTTPS:
+    SECURE_PROXY_SSL_HEADER = ('HTTP_X_FORWARDED_PROTO', 'https')
+    SECURE_SSL_REDIRECT = True
+    SESSION_COOKIE_SECURE = True
+    CSRF_COOKIE_SECURE = True
+    # Start low; raise to 31536000 (one year) once HTTPS is known to work.
+    SECURE_HSTS_SECONDS = config('SECURE_HSTS_SECONDS', default=3600, cast=int)
+    # Subdomain HSTS and preload need control of the whole parent domain,
+    # which is not the case for *.elasticbeanstalk.com.
+    SILENCED_SYSTEM_CHECKS = ['security.W005', 'security.W021']
 
 
 # Application definition
