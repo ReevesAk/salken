@@ -128,6 +128,19 @@ uv pip compile --upgrade --python-version 3.11 --universal \
   requirements-dev.txt -o requirements.lock
 ```
 
+When `pip-audit` reports a vulnerability whose fix is newer than two weeks,
+make an explicit exception for that one package, then record it in the commit
+message:
+
+```sh
+uv pip compile <command from the lockfile header> \
+  --exclude-newer-package <package>=<date after the fix release> \
+  --upgrade-package <package>
+```
+
+The exception is kept in the lockfile's header, so later regenerations and
+the CI check include it.
+
 CI runs `scripts/check_lockfile.sh` (also `make check-lock`), which re-runs the
 command recorded in the lockfile's header and fails if the result differs from
 the committed `requirements.lock`.
