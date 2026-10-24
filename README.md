@@ -45,6 +45,19 @@ use Django's default SMTP backend. To print them to the console instead, add
 `EMAIL_BACKEND = 'django.core.mail.backends.console.EmailBackend'` to your
 local settings.
 
+### With Docker
+
+`docker-compose.yml` runs the app against PostgreSQL 16, the same database
+engine as production:
+
+```sh
+docker compose up --build              # app on http://localhost:8000/
+docker compose run --rm web pytest     # test suite against PostgreSQL
+docker compose down -v                 # stop and delete the database volume
+```
+
+The image runs Django's development server and is for local use only.
+
 ## Running tests
 
 ```sh
