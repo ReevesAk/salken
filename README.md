@@ -65,10 +65,12 @@ pytest                                                    # run the suite
 pytest --cov=accounts --cov=cart --cov=orders --cov=store # with coverage
 ruff check .                                              # lint
 ruff format .                                             # format
+pip-audit -r requirements.lock --no-deps --disable-pip    # vulnerabilities (pip install pip-audit)
 ```
 
-Or run `make test` and `make lint`. CI (`.github/workflows/ci.yml`) runs the
-lint and test steps on every push to `master` and on every pull request.
+Or run `make test` and `make lint`. CI (`.github/workflows/ci.yml`) runs lint,
+the format check, tests on SQLite and PostgreSQL, a Docker build, and
+`pip-audit` on every push to `master` and on every pull request.
 
 Tests live in each app's `tests/` package. Shared fixtures (`product`,
 `variations`, `user`, `password`) are in the top-level `conftest.py`.
