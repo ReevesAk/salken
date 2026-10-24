@@ -43,12 +43,14 @@ def place_order(client, data=BILLING):
 def pay(client, order, trans_id='TX-1'):
     return client.post(
         reverse('payments'),
-        json.dumps({
-            'orderID': order.order_number,
-            'transID': trans_id,
-            'payment_method': 'PayPal',
-            'status': 'COMPLETED',
-        }),
+        json.dumps(
+            {
+                'orderID': order.order_number,
+                'transID': trans_id,
+                'payment_method': 'PayPal',
+                'status': 'COMPLETED',
+            }
+        ),
         content_type='application/json',
     )
 
@@ -110,13 +112,20 @@ class TestPayments:
 
         response = pay(logged_in, order)
 
-        assert response.json() == {'order_number': order.order_number, 'transID': 'TX-1'}
+        assert response.json() == {
+            'order_number': order.order_number,
+            'transID': 'TX-1',
+        }
         order.refresh_from_db()
         assert order.is_ordered is True
         assert order.payment.payment_id == 'TX-1'
 
         ordered = OrderProduct.objects.get()
-        assert (ordered.product, ordered.quantity, ordered.product_price) == (product, 2, 40)
+        assert (ordered.product, ordered.quantity, ordered.product_price) == (
+            product,
+            2,
+            40,
+        )
         assert list(ordered.variations.all()) == [variations['red']]
 
         product.refresh_from_db()

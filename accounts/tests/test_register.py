@@ -33,7 +33,10 @@ def test_register_creates_inactive_account_and_profile(client):
     response = client.post(reverse('register'), registration_data())
 
     assert response.status_code == 302
-    assert response['Location'] == '/accounts/login/?command=verification&email=ada@example.com'
+    assert (
+        response['Location']
+        == '/accounts/login/?command=verification&email=ada@example.com'
+    )
 
     user = Account.objects.get(email='ada@example.com')
     assert user.username == 'AdaLovelace'
@@ -86,8 +89,12 @@ def test_tampered_activation_link_is_rejected(client):
 def test_inactive_account_cannot_log_in(client):
     client.post(reverse('register'), registration_data())
 
-    client.post(reverse('login'), {
-        'email': 'ada@example.com', 'password': 'analytical-engine-1843',
-    })
+    client.post(
+        reverse('login'),
+        {
+            'email': 'ada@example.com',
+            'password': 'analytical-engine-1843',
+        },
+    )
 
     assert '_auth_user_id' not in client.session

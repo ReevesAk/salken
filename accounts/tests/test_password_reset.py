@@ -36,9 +36,13 @@ def test_full_reset_flow(client, user):
     assert response['Location'] == reverse('resetPassword')
     assert client.get(reverse('resetPassword')).status_code == 200
 
-    response = client.post(reverse('resetPassword'), {
-        'password': 'brand-new-pass', 'confirm_password': 'brand-new-pass',
-    })
+    response = client.post(
+        reverse('resetPassword'),
+        {
+            'password': 'brand-new-pass',
+            'confirm_password': 'brand-new-pass',
+        },
+    )
 
     assert response['Location'] == reverse('login')
     user.refresh_from_db()
@@ -58,9 +62,13 @@ def test_invalid_token_is_rejected(client, user):
 
 
 def test_reset_without_validated_link_redirects(client, user, password):
-    response = client.post(reverse('resetPassword'), {
-        'password': 'brand-new-pass', 'confirm_password': 'brand-new-pass',
-    })
+    response = client.post(
+        reverse('resetPassword'),
+        {
+            'password': 'brand-new-pass',
+            'confirm_password': 'brand-new-pass',
+        },
+    )
 
     assert response['Location'] == reverse('forgotPassword')
     user.refresh_from_db()
@@ -72,9 +80,13 @@ def test_mismatched_passwords_are_rejected(client, user, password):
     session['uid'] = str(user.pk)
     session.save()
 
-    response = client.post(reverse('resetPassword'), {
-        'password': 'brand-new-pass', 'confirm_password': 'other',
-    })
+    response = client.post(
+        reverse('resetPassword'),
+        {
+            'password': 'brand-new-pass',
+            'confirm_password': 'other',
+        },
+    )
 
     assert response['Location'] == reverse('resetPassword')
     user.refresh_from_db()

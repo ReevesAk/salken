@@ -10,4 +10,4 @@ def home(request):
     context = {
         'products': products,
     }
-    return render(request=request,  template_name='home.html', context=context)
+    return render(request=request, template_name='home.html', context=context)

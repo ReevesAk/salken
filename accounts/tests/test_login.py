@@ -8,7 +8,9 @@ pytestmark = pytest.mark.django_db
 
 
 def login(client, email, password, **extra):
-    return client.post(reverse('login'), {'email': email, 'password': password}, **extra)
+    return client.post(
+        reverse('login'), {'email': email, 'password': password}, **extra
+    )
 
 
 def messages_of(response):
@@ -50,7 +52,9 @@ def test_missing_fields_do_not_raise(client, db):
 
 def test_redirects_to_next_from_referer(client, user, password):
     response = login(
-        client, user.email, password,
+        client,
+        user.email,
+        password,
         HTTP_REFERER='http://testserver/accounts/login?next=/cart/checkout/',
     )
 
@@ -59,7 +63,9 @@ def test_redirects_to_next_from_referer(client, user, password):
 
 def test_ignores_offsite_next_url(client, user, password):
     response = login(
-        client, user.email, password,
+        client,
+        user.email,
+        password,
         HTTP_REFERER='http://testserver/accounts/login?next=https://evil.example/',
     )
 

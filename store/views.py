@@ -14,6 +14,7 @@ from orders.models import OrderProduct
 
 # Create your views here.
 
+
 # store handles the logic of what is displayed on the store page as well
 # as how it is displayed.
 def store(request, category_slug=None):
@@ -22,14 +23,16 @@ def store(request, category_slug=None):
 
     if category_slug != None:
         categories = get_object_or_404(Category, slug=category_slug)
-        products = Product.objects.filter(category=categories, is_available=True).order_by('id')
-        paginator = Paginator(object_list=products, per_page=1  )
-        page    = request.GET.get('page')
+        products = Product.objects.filter(
+            category=categories, is_available=True
+        ).order_by('id')
+        paginator = Paginator(object_list=products, per_page=1)
+        page = request.GET.get('page')
         paged_product = paginator.get_page(page)
-    else:     
+    else:
         products = Product.objects.all().filter(is_available=True).order_by('id')
         paginator = Paginator(object_list=products, per_page=6)
-        page    = request.GET.get('page')
+        page = request.GET.get('page')
         paged_product = paginator.get_page(page)
 
     context = {
@@ -46,7 +49,9 @@ def product_detail(request, category_slug, product_slug):
         Product, category__slug=category_slug, slug=product_slug
     )
     if request.user.is_authenticated:
-        in_cart = CartItem.objects.filter(user=request.user, product=single_product).exists()
+        in_cart = CartItem.objects.filter(
+            user=request.user, product=single_product
+        ).exists()
         orderproduct = OrderProduct.objects.filter(
             user=request.user, product_id=single_product.id
         ).exists()
@@ -62,16 +67,17 @@ def product_detail(request, category_slug, product_slug):
 
     # Get the product gallery
     product_gallery = ProductGallery.objects.filter(product_id=single_product.id)
-    
 
     context = {
-        'single_product' : single_product,
-        'incart'         : in_cart,
+        'single_product': single_product,
+        'incart': in_cart,
         'orderproduct': orderproduct,
         'reviews': reviews,
         'product_gallery': product_gallery,
     }
-    return render(request=request, template_name='store/product_detail.html', context=context)
+    return render(
+        request=request, template_name='store/product_detail.html', context=context
+    )
 
 
 # search handles the search requests for products made by users.
