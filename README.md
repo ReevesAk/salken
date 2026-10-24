@@ -85,7 +85,16 @@ database is unreachable. Point the load balancer health check at it. It
 responds before Django's host validation, so checks addressed to the instance
 IP work without adding the IP to `ALLOWED_HOSTS`.
 
-Application and Django logs go to stdout at `LOG_LEVEL` (default `INFO`).
+Application and Django logs go to stdout at `LOG_LEVEL` (default `INFO`). With
+`DEBUG=False` each line is a JSON object (`time`, `level`, `logger`, `message`,
+plus `exc_info` for exceptions), which CloudWatch Logs Insights can query.
+Locally, logs are plain text. Set `LOG_FORMAT=json` or `LOG_FORMAT=text` to
+override.
+
+Set `SENTRY_DSN` to report unhandled exceptions to Sentry (`SENTRY_ENVIRONMENT`
+and `SENTRY_TRACES_SAMPLE_RATE` are optional). With no DSN, nothing is sent.
+Events don't include personal data such as emails, IPs, cookies, or request
+bodies.
 
 ## Configuration
 
@@ -118,6 +127,19 @@ uv pip compile --upgrade --python-version 3.11 --universal \
   --exclude-newer "$(date -u -v-14d +%Y-%m-%d 2>/dev/null || date -u -d '14 days ago' +%Y-%m-%d)" \
   requirements-dev.txt -o requirements.lock
 ```
+
+When `pip-audit` reports a vulnerability whose fix is newer than two weeks,
+make an explicit exception for that one package, then record it in the commit
+message:
+
+```sh
+uv pip compile <command from the lockfile header> \
+  --exclude-newer-package <package>=<date after the fix release> \
+  --upgrade-package <package>
+```
+
+The exception is kept in the lockfile's header, so later regenerations and
+the CI check include it.
 
 CI runs `scripts/check_lockfile.sh` (also `make check-lock`), which re-runs the
 command recorded in the lockfile's header and fails if the result differs from
