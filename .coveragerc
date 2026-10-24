@@ -1,4 +1,12 @@
+# asgi.py and wsgi.py are server entry points, loaded by the WSGI/ASGI server
+# rather than by tests.
 [run]
 omit =
     */migrations/*
     */tests/*
+    salken/asgi.py
+    salken/wsgi.py
+
+[report]
+# CI fails if total coverage drops below this. Current coverage is ~97%.
+fail_under = 90

@@ -65,7 +65,7 @@ The image runs Django's development server and is for local use only.
 
 ```sh
 pytest                                                    # run the suite
-pytest --cov=accounts --cov=cart --cov=orders --cov=store # with coverage
+make test                                                 # with coverage; fails below 90%
 ruff check .                                              # lint
 ruff format .                                             # format
 pip-audit -r requirements.lock --no-deps --disable-pip    # vulnerabilities (pip install pip-audit)

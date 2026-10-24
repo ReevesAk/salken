@@ -27,7 +27,7 @@ jobs:
         run: ruff format --check .
 
       - name: Test
-        run: pytest --cov=accounts --cov=cart --cov=orders --cov=store --cov-report=term-missing
+        run: pytest --cov=accounts --cov=cart --cov=category --cov=orders --cov=store --cov=salken --cov-report=term-missing
 
   postgres:
     # Production runs on PostgreSQL (RDS); the main job uses SQLite.
