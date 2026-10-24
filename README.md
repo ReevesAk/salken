@@ -91,6 +91,11 @@ plus `exc_info` for exceptions), which CloudWatch Logs Insights can query.
 Locally, logs are plain text. Set `LOG_FORMAT=json` or `LOG_FORMAT=text` to
 override.
 
+Set `SENTRY_DSN` to report unhandled exceptions to Sentry (`SENTRY_ENVIRONMENT`
+and `SENTRY_TRACES_SAMPLE_RATE` are optional). With no DSN, nothing is sent.
+Events don't include personal data such as emails, IPs, cookies, or request
+bodies.
+
 ## Configuration
 
 `salken/settings.py` reads these values from the environment, or from a `.env`

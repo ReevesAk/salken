@@ -15,6 +15,8 @@ import os
 from decouple import Csv, config
 from django.core.exceptions import ImproperlyConfigured
 
+from salken.errors import init_error_tracking
+
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
@@ -232,6 +234,16 @@ LOGGING = {
         },
     },
 }
+
+# Error tracking: unhandled exceptions are reported to Sentry when
+# SENTRY_DSN is set. Without it, nothing is sent anywhere.
+init_error_tracking(
+    dsn=config('SENTRY_DSN', default=''),
+    environment=config(
+        'SENTRY_ENVIRONMENT', default='development' if DEBUG else 'production'
+    ),
+    traces_sample_rate=config('SENTRY_TRACES_SAMPLE_RATE', default=0.0, cast=float),
+)
 
 # SMTP configuration
 # EMAIL_HOST = config('EMAIL_HOST')
