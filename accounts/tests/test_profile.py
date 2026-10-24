@@ -1,5 +1,9 @@
+import io
+
 import pytest
+from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
+from PIL import Image
 
 from accounts.models import UserProfile
 
@@ -100,3 +104,46 @@ def test_pages_create_missing_profile(client, user, name):
 
     assert client.get(reverse(name)).status_code == 200
     assert UserProfile.objects.filter(user=user).exists()
+
+
+def png_upload(name='avatar.png'):
+    buffer = io.BytesIO()
+    Image.new('RGB', (4, 4), 'red').save(buffer, format='PNG')
+    return SimpleUploadedFile(name, buffer.getvalue(), content_type='image/png')
+
+
+def profile_form_data(**extra):
+    return {
+        'first_name': 'Ada',
+        'last_name': 'Lovelace',
+        'phone_no': '5550100',
+        'address_line_1': '',
+        'address_line_2': '',
+        'city': 'London',
+        'state': '',
+        'country': 'UK',
+        **extra,
+    }
+
+
+def test_edit_profile_accepts_image_upload(logged_in, profile):
+    response = logged_in.post(
+        reverse('edit_profile'), profile_form_data(profile_picture=png_upload())
+    )
+
+    assert response['Location'] == reverse('edit_profile')
+    profile.refresh_from_db()
+    assert profile.profile_picture.name.startswith('userprofile/avatar')
+
+
+def test_edit_profile_rejects_non_image_upload(logged_in, profile):
+    fake = SimpleUploadedFile('avatar.png', b'not an image', content_type='image/png')
+
+    response = logged_in.post(
+        reverse('edit_profile'), profile_form_data(profile_picture=fake)
+    )
+
+    assert response.status_code == 200
+    assert 'profile_picture' in response.context['profile_form'].errors
+    profile.refresh_from_db()
+    assert not profile.profile_picture
