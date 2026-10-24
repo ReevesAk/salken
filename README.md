@@ -119,6 +119,10 @@ uv pip compile --upgrade --python-version 3.11 --universal \
   requirements-dev.txt -o requirements.lock
 ```
 
+CI runs `scripts/check_lockfile.sh` (also `make check-lock`), which re-runs the
+command recorded in the lockfile's header and fails if the result differs from
+the committed `requirements.lock`.
+
 Dependabot opens one grouped update PR per week for Python packages and
 GitHub Actions. It can bump `requirements*.txt` but not the lockfile, so
 `tests/test_requirements.py` fails on its PRs until you check out the branch,
