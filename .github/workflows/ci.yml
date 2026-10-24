@@ -90,3 +90,20 @@ jobs:
 
       - name: Audit requirements.lock
         run: pip-audit -r requirements.lock --no-deps --disable-pip
+
+  lockfile:
+    # Fails when requirements.lock doesn't match a fresh resolution of
+    # requirements*.txt (stale transitive pins or hand edits).
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install uv
+        run: pip install uv==0.11.18
+
+      - name: Check requirements.lock is up to date
+        run: ./scripts/check_lockfile.sh

@@ -26,3 +26,7 @@ lint:
 # Format Python code.
 format:
 	python3 -m ruff format .
+
+# Check that requirements.lock matches a fresh resolution.
+check-lock:
+	./scripts/check_lockfile.sh
