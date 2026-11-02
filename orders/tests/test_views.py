@@ -118,6 +118,7 @@ class TestPayments:
         }
         order.refresh_from_db()
         assert order.is_ordered is True
+        assert order.payment is not None
         assert order.payment.payment_id == 'TX-1'
 
         ordered = OrderProduct.objects.get()

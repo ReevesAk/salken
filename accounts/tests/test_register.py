@@ -64,7 +64,9 @@ def test_register_rejects_mismatched_passwords(client):
 
 
 def activation_path(email_body):
-    return re.search(r'http://testserver(\S+)', email_body).group(1)
+    match = re.search(r'http://testserver(\S+)', email_body)
+    assert match, email_body
+    return match.group(1)
 
 
 def test_activation_link_activates_account(client):

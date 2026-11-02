@@ -30,3 +30,7 @@ format:
 # Check that requirements.lock matches a fresh resolution.
 check-lock:
 	./scripts/check_lockfile.sh
+
+# Type check with mypy and django-stubs.
+typecheck:
+	python3 -m mypy .
