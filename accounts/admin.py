@@ -24,6 +24,7 @@ class AccountAdmin(UserAdmin):
 
 
 class UserProfileAdmin(admin.ModelAdmin):
+    @admin.display(description='Profile Picture')
     def thumbnail(self, object):
         if not object.profile_picture:
             return ''
@@ -32,7 +33,6 @@ class UserProfileAdmin(admin.ModelAdmin):
             object.profile_picture.url,
         )
 
-    thumbnail.short_description = 'Profile Picture'
     list_display = ('thumbnail', 'user', 'city', 'state', 'country')
 
 

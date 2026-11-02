@@ -101,4 +101,5 @@ class TestUsernames:
     def test_username_fits_the_field(self):
         user = register(first_name='A' * 50, last_name='B' * 50)
 
-        assert len(user.username) <= Account._meta.get_field('username').max_length
+        # Account.username has max_length=50.
+        assert user.username == 'A' * 50

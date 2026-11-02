@@ -312,9 +312,7 @@ def order_detail(request, order_id):
     # Scope to the current user so customers cannot view each other's orders.
     order = get_object_or_404(Order, order_number=order_id, user=request.user)
     order_detail = OrderProduct.objects.filter(order=order)
-    subtotal = 0
-    for i in order_detail:
-        subtotal += i.product_price * i.quantity
+    subtotal = sum(i.product_price * i.quantity for i in order_detail)
 
     context = {
         'order_detail': order_detail,

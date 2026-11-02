@@ -13,7 +13,9 @@ def request_reset(client, email):
 
 
 def reset_link_path(email_body):
-    return re.search(r'http://testserver(\S+)', email_body).group(1)
+    match = re.search(r'http://testserver(\S+)', email_body)
+    assert match, email_body
+    return match.group(1)
 
 
 def test_forgot_password_page_renders(client):

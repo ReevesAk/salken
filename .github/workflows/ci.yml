@@ -111,3 +111,20 @@ jobs:
 
       - name: Check requirements.lock is up to date
         run: ./scripts/check_lockfile.sh
+
+  typecheck:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+          cache: pip
+          cache-dependency-path: requirements.lock
+
+      - name: Install dependencies
+        run: pip install -r requirements.lock
+
+      - name: Type check
+        run: mypy .

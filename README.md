@@ -68,12 +68,14 @@ pytest                                                    # run the suite
 make test                                                 # with coverage; fails below 90%
 ruff check .                                              # lint
 ruff format .                                             # format
+mypy .                                                    # type check
 pip-audit -r requirements.lock --no-deps --disable-pip    # vulnerabilities (pip install pip-audit)
 ```
 
-Or run `make test` and `make lint`. CI (`.github/workflows/ci.yml`) runs lint,
-the format check, tests on SQLite and PostgreSQL, a Docker build, and
-`pip-audit` on every push to `master` and on every pull request.
+Or run `make test`, `make lint`, and `make typecheck`. CI
+(`.github/workflows/ci.yml`) runs lint, the format check, mypy, tests on SQLite
+and PostgreSQL, a Docker build, `pip-audit`, and the lockfile check on every
+push to `master` and on every pull request.
 
 Tests live in each app's `tests/` package. Shared fixtures (`product`,
 `variations`, `user`, `password`) are in the top-level `conftest.py`.

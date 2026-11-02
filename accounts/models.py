@@ -5,7 +5,7 @@ from django.contrib.auth.models import AbstractBaseUser, BaseUserManager
 
 
 # MyAccountManager handles the creation of of a superuser(admin).
-class MyAccountManager(BaseUserManager):
+class MyAccountManager(BaseUserManager["Account"]):
     def create_user(self, first_name, last_name, username, email, password=None):
         if not email:
             raise ValueError("User must have a valid email address")

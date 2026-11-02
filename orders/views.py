@@ -40,7 +40,8 @@ def payments(request):
         user=request.user,
         payment_id=data['transID'],
         payment_method=data['payment_method'],
-        amount_paid=order.order_total,
+        # amount_paid is a CharField; store the total explicitly as text.
+        amount_paid=str(order.order_total),
         status=data['status'],
     )
     payment.save()
@@ -168,9 +169,7 @@ def order_complete(request):
         order = Order.objects.get(order_number=order_number, is_ordered=True)
         ordered_products = OrderProduct.objects.filter(order_id=order.id)
 
-        subtotal = 0
-        for i in ordered_products:
-            subtotal += i.product_price * i.quantity
+        subtotal = sum(i.product_price * i.quantity for i in ordered_products)
 
         payment = Payment.objects.get(payment_id=transID)
 
