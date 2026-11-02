@@ -50,6 +50,7 @@ def register_user(*, first_name, last_name, phone_no, email, password, domain):
 # isn't taken, truncated to fit Account.username.
 def _unique_username(base):
     max_length = Account._meta.get_field('username').max_length
+    assert max_length is not None
     candidate = base[:max_length]
     suffix = 1
     while Account.objects.filter(username=candidate).exists():

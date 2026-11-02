@@ -32,7 +32,9 @@ class RegistrationForm(forms.ModelForm):
             self.fields[field].widget.attrs['class'] = 'form-control'
 
     def clean(self):
-        cleaned_data = super(RegistrationForm, self).clean()
+        # ModelForm.clean() enables the unique checks on email and phone_no.
+        super().clean()
+        cleaned_data = self.cleaned_data
         # An unsaved account lets the similarity validator compare the
         # password with the name and email being registered.
         applicant = Account(

@@ -132,3 +132,21 @@ def test_register_enforces_password_validators(client, password, error):
     assert response.status_code == 200
     assert error in response.context['form'].errors['password']
     assert not Account.objects.exists()
+
+
+@pytest.mark.parametrize(
+    'field, value', [('email', 'ada@example.com'), ('phone_no', '5550100')]
+)
+def test_register_rejects_duplicate_email_and_phone(client, field, value):
+    client.post(reverse('register'), registration_data())
+
+    response = client.post(
+        reverse('register'),
+        registration_data(
+            **{'email': 'other@example.com', 'phone_no': '5550199', field: value}
+        ),
+    )
+
+    assert response.status_code == 200
+    assert field in response.context['form'].errors
+    assert Account.objects.count() == 1
