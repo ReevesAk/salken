@@ -13,6 +13,7 @@ from .forms import (
     UserProfileForm,
 )
 from .models import Account, UserProfile
+from .services import AccountRegistrationError, register_user
 from orders.models import Order, OrderProduct
 from django.utils.http import url_has_allowed_host_and_scheme
 
@@ -42,46 +43,21 @@ def register(request):
     if request.method == 'POST':
         form = RegistrationForm(request.POST)
         if form.is_valid():
-            first_name = form.cleaned_data['first_name']
-            last_name = form.cleaned_data['last_name']
-            phone_no = form.cleaned_data['phone_no']
-            email = form.cleaned_data['email']
-            password = form.cleaned_data['password']
-
-            username = first_name + last_name
-
-            user = Account.objects.create_user(
-                first_name=first_name,
-                last_name=last_name,
-                username=username,
-                email=email,
-                password=password,
-            )
-            user.phone_no = phone_no
-            user.save()
-
-            # Create a user profile
-            profile = UserProfile()
-            profile.user_id = user.id
-            profile.profile_picture = 'default/default-user.png'
-            profile.save()
-
-            # USER ACTIVATION
-            current_site = get_current_site(request)
-            mail_subject = "Follow the link to activate your account"
-            message = render_to_string(
-                'accounts/account_verification_email.html',
-                {
-                    "user": user,
-                    "domain": current_site,
-                    'uid': urlsafe_base64_encode(force_bytes(user.pk)),
-                    'token': default_token_generator.make_token(user),
-                },
-            )
-            to_email = email
-            send_email = EmailMessage(mail_subject, message, to=[to_email])
-            send_email.send()
-            return redirect('/accounts/login/?command=verification&email=' + email)
+            try:
+                user = register_user(
+                    first_name=form.cleaned_data['first_name'],
+                    last_name=form.cleaned_data['last_name'],
+                    phone_no=form.cleaned_data['phone_no'],
+                    email=form.cleaned_data['email'],
+                    password=form.cleaned_data['password'],
+                    domain=get_current_site(request),
+                )
+            except AccountRegistrationError as error:
+                form.add_error(None, str(error))
+            else:
+                return redirect(
+                    '/accounts/login/?command=verification&email=' + user.email
+                )
     else:
         form = RegistrationForm()
 
