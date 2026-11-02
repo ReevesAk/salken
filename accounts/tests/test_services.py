@@ -83,3 +83,22 @@ def test_register_view_shows_email_failure_on_form(client):
         "We couldn't send your activation email. Please try again later."
     ]
     assert not Account.objects.exists()
+
+
+class TestUsernames:
+    def test_username_joins_first_and_last_name(self):
+        assert register().username == 'AdaLovelace'
+
+    def test_same_name_gets_a_unique_username(self):
+        first = register()
+        second = register(email='ada2@example.com', phone_no='5550101')
+        third = register(email='ada3@example.com', phone_no='5550102')
+
+        assert first.username == 'AdaLovelace'
+        assert second.username == 'AdaLovelace2'
+        assert third.username == 'AdaLovelace3'
+
+    def test_username_fits_the_field(self):
+        user = register(first_name='A' * 50, last_name='B' * 50)
+
+        assert len(user.username) <= Account._meta.get_field('username').max_length

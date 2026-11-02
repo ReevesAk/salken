@@ -98,3 +98,15 @@ def test_inactive_account_cannot_log_in(client):
     )
 
     assert '_auth_user_id' not in client.session
+
+
+def test_second_person_with_same_name_can_register(client):
+    client.post(reverse('register'), registration_data())
+
+    response = client.post(
+        reverse('register'),
+        registration_data(email='ada2@example.com', phone_no='5550101'),
+    )
+
+    assert response.status_code == 302
+    assert Account.objects.filter(first_name='Ada', last_name='Lovelace').count() == 2

@@ -28,7 +28,7 @@ def register_user(*, first_name, last_name, phone_no, email, password, domain):
             user = Account.objects.create_user(
                 first_name=first_name,
                 last_name=last_name,
-                username=first_name + last_name,
+                username=_unique_username(first_name + last_name),
                 email=email,
                 password=password,
             )
@@ -44,6 +44,18 @@ def register_user(*, first_name, last_name, phone_no, email, password, domain):
             "We couldn't send your activation email. Please try again later."
         ) from error
     return user
+
+
+# _unique_username returns base, or base with the lowest numeric suffix that
+# isn't taken, truncated to fit Account.username.
+def _unique_username(base):
+    max_length = Account._meta.get_field('username').max_length
+    candidate = base[:max_length]
+    suffix = 1
+    while Account.objects.filter(username=candidate).exists():
+        suffix += 1
+        candidate = base[: max_length - len(str(suffix))] + str(suffix)
+    return candidate
 
 
 # send_activation_email emails the user a one-time link to activate their
