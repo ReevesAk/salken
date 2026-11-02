@@ -20,6 +20,10 @@ jobs:
       - name: Install dependencies
         run: pip install -r requirements.lock
 
+      # Follow the README's setup exactly, so tests run the way a developer's do.
+      - name: Create .env from the example
+        run: cp .env.example .env
+
       - name: Lint
         run: ruff check .
 

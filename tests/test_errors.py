@@ -31,7 +31,7 @@ def test_dsn_initializes_sentry_without_personal_data():
     assert any(isinstance(i, DjangoIntegration) for i in kwargs['integrations'])
 
 
-def test_settings_enable_sentry_from_environment(monkeypatch):
+def test_settings_enable_sentry_from_environment(monkeypatch, ignore_env_file):
     monkeypatch.setenv('SENTRY_DSN', 'https://key@sentry.example/1')
     monkeypatch.setenv('SENTRY_ENVIRONMENT', 'staging')
     try:

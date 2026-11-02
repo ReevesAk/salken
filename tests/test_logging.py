@@ -12,7 +12,7 @@ import salken.settings
 
 
 @pytest.fixture
-def load_settings(monkeypatch):
+def load_settings(monkeypatch, ignore_env_file):
     """Reload salken.settings under the given environment variables."""
 
     def load(**env):
