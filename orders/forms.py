@@ -18,3 +18,12 @@ class OrderForm(forms.ModelForm):
             'city',
             'order_note',
         ]
+
+
+# PaymentForm validates the JSON body the payment page posts to payments()
+# after the payment provider approves a transaction.
+class PaymentForm(forms.Form):
+    orderID = forms.CharField(max_length=20)
+    transID = forms.CharField(max_length=100)
+    payment_method = forms.CharField(max_length=100)
+    status = forms.CharField(max_length=100)

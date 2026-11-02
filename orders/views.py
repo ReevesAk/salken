@@ -10,7 +10,7 @@ from django.template.loader import render_to_string
 from django.http import JsonResponse
 
 from cart.models import CartItem
-from .forms import OrderForm
+from .forms import OrderForm, PaymentForm
 from .models import Order, OrderProduct, Payment
 from store.models import Product
 
@@ -22,18 +22,26 @@ from store.models import Product
 @login_required(login_url='login')
 @require_POST
 def payments(request):
-    body = json.loads(request.body)
+    try:
+        body = json.loads(request.body)
+    except ValueError:
+        return JsonResponse({'error': 'Request body must be JSON.'}, status=400)
+    form = PaymentForm(body if isinstance(body, dict) else {})
+    if not form.is_valid():
+        return JsonResponse({'errors': form.errors}, status=400)
+    data = form.cleaned_data
+
     order = get_object_or_404(
-        Order, user=request.user, is_ordered=False, order_number=body["orderID"]
+        Order, user=request.user, is_ordered=False, order_number=data['orderID']
     )
 
     # Store transaction details inside payment model.
     payment = Payment(
         user=request.user,
-        payment_id=body['transID'],
-        payment_method=body['payment_method'],
+        payment_id=data['transID'],
+        payment_method=data['payment_method'],
         amount_paid=order.order_total,
-        status=body['status'],
+        status=data['status'],
     )
     payment.save()
 
