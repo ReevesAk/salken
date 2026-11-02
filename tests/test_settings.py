@@ -12,7 +12,7 @@ import salken.settings
 
 
 @pytest.fixture
-def reload_settings(monkeypatch):
+def reload_settings(monkeypatch, ignore_env_file):
     def reload(**env):
         for key, value in env.items():
             monkeypatch.setenv(key, value)
