@@ -126,3 +126,20 @@ class TestSessionCartMerge:
 
         assert not Cart.objects.exists()
         assert not CartItem.objects.exists()
+
+
+def test_logout_ends_session_and_redirects_to_login(client, user):
+    client.force_login(user)
+
+    response = client.get(reverse('logout'))
+
+    assert response.status_code == 302
+    assert response['Location'] == reverse('login')
+    assert '_auth_user_id' not in client.session
+    assert 'You are logged out' in messages_of(response)
+
+
+def test_logout_requires_login(client, db):
+    response = client.get(reverse('logout'))
+
+    assert response['Location'].startswith(reverse('login'))
