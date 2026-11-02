@@ -4,6 +4,7 @@ from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages, auth
 from django.contrib.auth.decorators import login_required
 from .forms import (
+    ChangePasswordForm,
     LoginForm,
     PasswordResetRequestForm,
     SetPasswordForm,
@@ -316,26 +317,17 @@ def edit_profile(request):
 @login_required(login_url='login')
 def change_password(request):
     if request.method == 'POST':
-        current_password = request.POST['current_password']
-        new_password = request.POST['new_password']
-        confirm_password = request.POST['confirm_password']
-
-        user = Account.objects.get(username__exact=request.user.username)
-
-        if new_password == confirm_password:
-            success = user.check_password(current_password)
-            if success:
-                user.set_password(new_password)
-                user.save()
-                # auth.logout(request)
-                messages.success(request, 'Password updated successfully.')
-                return redirect('change_password')
-            else:
-                messages.error(request, 'Please enter valid current password')
-                return redirect('change_password')
+        form = ChangePasswordForm(request.POST, user=request.user)
+        if form.is_valid():
+            request.user.set_password(form.cleaned_data['new_password'])
+            request.user.save()
+            # Changing the password invalidates the session; keep the user
+            # logged in on this device.
+            auth.update_session_auth_hash(request, request.user)
+            messages.success(request, 'Password updated successfully.')
         else:
-            messages.error(request, 'Password does not match!')
-            return redirect('change_password')
+            messages.error(request, _first_error(form))
+        return redirect('change_password')
     return render(request, 'accounts/change_password.html')
 
 

@@ -79,6 +79,27 @@ class SetPasswordForm(forms.Form):
         return cleaned_data
 
 
+class ChangePasswordForm(forms.Form):
+    current_password = forms.CharField(strip=False, widget=forms.PasswordInput)
+    new_password = forms.CharField(strip=False, widget=forms.PasswordInput)
+    confirm_password = forms.CharField(strip=False, widget=forms.PasswordInput)
+
+    def __init__(self, *args, user, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+    def clean_current_password(self):
+        current_password = self.cleaned_data['current_password']
+        if not self.user.check_password(current_password):
+            raise forms.ValidationError('Please enter valid current password')
+        return current_password
+
+    def clean(self):
+        cleaned_data = super().clean()
+        _clean_new_password(self, 'new_password', 'Password does not match!', self.user)
+        return cleaned_data
+
+
 class UserForm(forms.ModelForm):
     class Meta:
         model = Account

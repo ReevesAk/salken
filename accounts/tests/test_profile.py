@@ -1,6 +1,7 @@
 import io
 
 import pytest
+from django.contrib.messages import get_messages
 from django.core.files.uploadedfile import SimpleUploadedFile
 from django.urls import reverse
 from PIL import Image
@@ -67,6 +68,10 @@ def test_edit_profile_updates_user_and_profile(logged_in, user, profile):
     assert (profile.address_line_1, profile.country) == ('12 St James Square', 'UK')
 
 
+def messages_of(response):
+    return [str(m) for m in get_messages(response.wsgi_request)]
+
+
 class TestChangePassword:
     def post(self, client, current, new, confirm=None):
         return client.post(
@@ -95,6 +100,40 @@ class TestChangePassword:
 
         user.refresh_from_db()
         assert user.check_password(password)
+
+    def test_stays_logged_in_after_change(self, logged_in, user, password):
+        self.post(logged_in, password, 'new-secret-pass')
+
+        response = logged_in.get(reverse('dashboard'))
+
+        assert response.status_code == 200
+
+    def test_enforces_password_validators(self, logged_in, user, password):
+        response = self.post(logged_in, password, 'short')
+
+        assert response['Location'] == reverse('change_password')
+        assert any('too short' in m for m in messages_of(response))
+        user.refresh_from_db()
+        assert user.check_password(password)
+
+    def test_rejects_password_similar_to_user(self, logged_in, user, password):
+        self.post(logged_in, password, 'ada@example.com')
+
+        user.refresh_from_db()
+        assert user.check_password(password)
+
+    def test_missing_fields_redirect_with_error(self, logged_in, user, password):
+        response = logged_in.post(reverse('change_password'), {})
+
+        assert response.status_code == 302
+        assert response['Location'] == reverse('change_password')
+        user.refresh_from_db()
+        assert user.check_password(password)
+
+    def test_wrong_current_password_message(self, logged_in, password):
+        response = self.post(logged_in, 'wrong', 'new-secret-pass')
+
+        assert 'Please enter valid current password' in messages_of(response)
 
 
 @pytest.mark.parametrize('name', ['dashboard', 'edit_profile'])
