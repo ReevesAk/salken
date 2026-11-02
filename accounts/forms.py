@@ -1,4 +1,5 @@
 from django import forms
+from django.contrib.auth.password_validation import validate_password
 from .models import Account, UserProfile
 
 
@@ -42,6 +43,61 @@ class RegistrationForm(forms.ModelForm):
 class LoginForm(forms.Form):
     email = forms.EmailField(max_length=100)
     password = forms.CharField(strip=False, widget=forms.PasswordInput)
+
+
+class PasswordResetRequestForm(forms.Form):
+    email = forms.EmailField(max_length=100)
+
+
+# _clean_new_password checks that a new password matches its confirmation and
+# passes AUTH_PASSWORD_VALIDATORS. user lets the similarity validator compare
+# the password with the user's name and email.
+def _clean_new_password(form, field, mismatch_message, user=None):
+    password = form.cleaned_data.get(field)
+    confirmation = form.cleaned_data.get('confirm_password')
+    if password is None or confirmation is None:
+        return
+    if password != confirmation:
+        raise forms.ValidationError(mismatch_message)
+    try:
+        validate_password(password, user=user)
+    except forms.ValidationError as error:
+        form.add_error(field, error)
+
+
+class SetPasswordForm(forms.Form):
+    password = forms.CharField(strip=False, widget=forms.PasswordInput)
+    confirm_password = forms.CharField(strip=False, widget=forms.PasswordInput)
+
+    def __init__(self, *args, user=None, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+    def clean(self):
+        cleaned_data = super().clean()
+        _clean_new_password(self, 'password', 'Passwords do not match!', self.user)
+        return cleaned_data
+
+
+class ChangePasswordForm(forms.Form):
+    current_password = forms.CharField(strip=False, widget=forms.PasswordInput)
+    new_password = forms.CharField(strip=False, widget=forms.PasswordInput)
+    confirm_password = forms.CharField(strip=False, widget=forms.PasswordInput)
+
+    def __init__(self, *args, user, **kwargs):
+        super().__init__(*args, **kwargs)
+        self.user = user
+
+    def clean_current_password(self):
+        current_password = self.cleaned_data['current_password']
+        if not self.user.check_password(current_password):
+            raise forms.ValidationError('Please enter valid current password')
+        return current_password
+
+    def clean(self):
+        cleaned_data = super().clean()
+        _clean_new_password(self, 'new_password', 'Password does not match!', self.user)
+        return cleaned_data
 
 
 class UserForm(forms.ModelForm):

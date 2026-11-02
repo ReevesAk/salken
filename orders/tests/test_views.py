@@ -161,3 +161,42 @@ class TestOrderComplete:
         response = client.get(reverse('order_complete'), {'order_number': 'x'})
 
         assert response['Location'] == reverse('home')
+
+
+class TestPaymentsValidation:
+    def post(self, client, body):
+        return client.post(reverse('payments'), body, content_type='application/json')
+
+    def test_malformed_json_returns_400(self, logged_in):
+        response = self.post(logged_in, '{not json')
+
+        assert response.status_code == 400
+        assert response.json() == {'error': 'Request body must be JSON.'}
+
+    @pytest.mark.parametrize('body', ['[]', '"text"', '{}'])
+    def test_non_object_or_empty_body_returns_400(self, logged_in, body):
+        response = self.post(logged_in, body)
+
+        assert response.status_code == 400
+        assert set(response.json()['errors']) == {
+            'orderID',
+            'transID',
+            'payment_method',
+            'status',
+        }
+
+    def test_missing_field_returns_400_without_paying(self, logged_in, cart_item):
+        place_order(logged_in)
+        order = Order.objects.get()
+
+        response = self.post(
+            logged_in,
+            json.dumps({'orderID': order.order_number, 'transID': 'TX-1'}),
+        )
+
+        assert response.status_code == 400
+        assert set(response.json()['errors']) == {'payment_method', 'status'}
+        order.refresh_from_db()
+        assert order.is_ordered is False
+        assert not Payment.objects.exists()
+        assert CartItem.objects.exists()

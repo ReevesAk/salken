@@ -1,6 +1,6 @@
 import pytest
 
-from accounts.forms import LoginForm
+from accounts.forms import LoginForm, PasswordResetRequestForm
 
 
 def test_login_form_accepts_valid_credentials():
@@ -23,3 +23,11 @@ def test_login_form_requires_password():
 
     assert not form.is_valid()
     assert 'password' in form.errors
+
+
+@pytest.mark.parametrize('email', ['', 'not-an-email', 'ada@'])
+def test_password_reset_request_form_rejects_invalid_email(email):
+    form = PasswordResetRequestForm({'email': email})
+
+    assert not form.is_valid()
+    assert 'email' in form.errors

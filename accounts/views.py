@@ -3,7 +3,15 @@ from urllib.parse import parse_qs, urlparse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages, auth
 from django.contrib.auth.decorators import login_required
-from .forms import LoginForm, RegistrationForm, UserForm, UserProfileForm
+from .forms import (
+    ChangePasswordForm,
+    LoginForm,
+    PasswordResetRequestForm,
+    SetPasswordForm,
+    RegistrationForm,
+    UserForm,
+    UserProfileForm,
+)
 from .models import Account, UserProfile
 from orders.models import Order, OrderProduct
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -20,6 +28,13 @@ from cart.views import _cart_id
 from cart.models import Cart, CartItem
 
 # Create your views here.
+
+
+# _first_error returns a form's first error message, for showing as a flash
+# message on views that redirect instead of re-rendering the form.
+def _first_error(form):
+    errors = form.non_field_errors() or next(iter(form.errors.values()))
+    return errors[0]
 
 
 # register handles the POST request to register a user.
@@ -151,7 +166,6 @@ def logout(request):
     auth.logout(request)
     messages.success(request, "You are logged out")
     return redirect("login")
-    render(request=request, template_name='accounts/logout.html')
 
 
 # activate handles the GET response for account verification via email.
@@ -191,7 +205,11 @@ def dashboard(request):
 # forgotPassword handles the forgot password logic and view.
 def forgotPassword(request):
     if request.method == 'POST':
-        email = request.POST.get('email', '')
+        form = PasswordResetRequestForm(request.POST)
+        if not form.is_valid():
+            messages.error(request, 'Please enter a valid email address.')
+            return redirect('forgotPassword')
+        email = form.cleaned_data['email']
         if Account.objects.filter(email=email).exists():
             user = Account.objects.get(email__exact=email)
 
@@ -242,24 +260,21 @@ def resetpassword_validate(request, uidb64, token):
 # resetPassword handles the reset password logic and view.
 def resetPassword(request):
     uid = request.session.get('uid')
-    if uid is None:
+    user = Account.objects.filter(pk=uid).first() if uid is not None else None
+    if user is None:
         messages.error(request, 'Please use the link in your password reset email.')
         return redirect('forgotPassword')
 
     if request.method == 'POST':
-        password = request.POST.get('password', '')
-        confirm_password = request.POST.get('confirm_password', '')
-
-        if password and password == confirm_password:
-            user = Account.objects.get(pk=uid)
-            user.set_password(password)
+        form = SetPasswordForm(request.POST, user=user)
+        if form.is_valid():
+            user.set_password(form.cleaned_data['password'])
             user.save()
             del request.session['uid']
             messages.success(request, 'Password reset successful')
             return redirect('login')
-        else:
-            messages.error(request, 'Passwords do not match!')
-            return redirect('resetPassword')
+        messages.error(request, _first_error(form))
+        return redirect('resetPassword')
     else:
         return render(request, 'accounts/resetPassword.html')
 
@@ -302,26 +317,17 @@ def edit_profile(request):
 @login_required(login_url='login')
 def change_password(request):
     if request.method == 'POST':
-        current_password = request.POST['current_password']
-        new_password = request.POST['new_password']
-        confirm_password = request.POST['confirm_password']
-
-        user = Account.objects.get(username__exact=request.user.username)
-
-        if new_password == confirm_password:
-            success = user.check_password(current_password)
-            if success:
-                user.set_password(new_password)
-                user.save()
-                # auth.logout(request)
-                messages.success(request, 'Password updated successfully.')
-                return redirect('change_password')
-            else:
-                messages.error(request, 'Please enter valid current password')
-                return redirect('change_password')
+        form = ChangePasswordForm(request.POST, user=request.user)
+        if form.is_valid():
+            request.user.set_password(form.cleaned_data['new_password'])
+            request.user.save()
+            # Changing the password invalidates the session; keep the user
+            # logged in on this device.
+            auth.update_session_auth_hash(request, request.user)
+            messages.success(request, 'Password updated successfully.')
         else:
-            messages.error(request, 'Password does not match!')
-            return redirect('change_password')
+            messages.error(request, _first_error(form))
+        return redirect('change_password')
     return render(request, 'accounts/change_password.html')
 
 
