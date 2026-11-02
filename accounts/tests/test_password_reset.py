@@ -91,3 +91,12 @@ def test_mismatched_passwords_are_rejected(client, user, password):
     assert response['Location'] == reverse('resetPassword')
     user.refresh_from_db()
     assert user.check_password(password)
+
+
+@pytest.mark.parametrize('data', [{}, {'email': ''}, {'email': 'not-an-email'}])
+def test_forgot_password_rejects_invalid_email(client, user, data):
+    response = client.post(reverse('forgotPassword'), data)
+
+    assert response.status_code == 302
+    assert response['Location'] == reverse('forgotPassword')
+    assert mail.outbox == []

@@ -3,7 +3,13 @@ from urllib.parse import parse_qs, urlparse
 from django.shortcuts import get_object_or_404, render, redirect
 from django.contrib import messages, auth
 from django.contrib.auth.decorators import login_required
-from .forms import LoginForm, RegistrationForm, UserForm, UserProfileForm
+from .forms import (
+    LoginForm,
+    PasswordResetRequestForm,
+    RegistrationForm,
+    UserForm,
+    UserProfileForm,
+)
 from .models import Account, UserProfile
 from orders.models import Order, OrderProduct
 from django.utils.http import url_has_allowed_host_and_scheme
@@ -190,7 +196,11 @@ def dashboard(request):
 # forgotPassword handles the forgot password logic and view.
 def forgotPassword(request):
     if request.method == 'POST':
-        email = request.POST.get('email', '')
+        form = PasswordResetRequestForm(request.POST)
+        if not form.is_valid():
+            messages.error(request, 'Please enter a valid email address.')
+            return redirect('forgotPassword')
+        email = form.cleaned_data['email']
         if Account.objects.filter(email=email).exists():
             user = Account.objects.get(email__exact=email)
 

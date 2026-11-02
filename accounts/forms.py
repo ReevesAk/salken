@@ -44,6 +44,10 @@ class LoginForm(forms.Form):
     password = forms.CharField(strip=False, widget=forms.PasswordInput)
 
 
+class PasswordResetRequestForm(forms.Form):
+    email = forms.EmailField(max_length=100)
+
+
 class UserForm(forms.ModelForm):
     class Meta:
         model = Account
