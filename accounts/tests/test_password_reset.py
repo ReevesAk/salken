@@ -1,6 +1,7 @@
 import re
 
 import pytest
+from django.contrib.messages import get_messages
 from django.core import mail
 from django.urls import reverse
 
@@ -100,3 +101,57 @@ def test_forgot_password_rejects_invalid_email(client, user, data):
     assert response.status_code == 302
     assert response['Location'] == reverse('forgotPassword')
     assert mail.outbox == []
+
+
+def start_reset(client, user):
+    session = client.session
+    session['uid'] = str(user.pk)
+    session.save()
+
+
+def reset_messages(response):
+    return [str(m) for m in get_messages(response.wsgi_request)]
+
+
+@pytest.mark.parametrize(
+    'new_password, message',
+    [
+        ('short', 'This password is too short. It must contain at least 8 characters.'),
+        ('84629173501', 'This password is entirely numeric.'),
+        ('password123', 'This password is too common.'),
+    ],
+)
+def test_reset_enforces_password_validators(
+    client, user, password, new_password, message
+):
+    start_reset(client, user)
+
+    response = client.post(
+        reverse('resetPassword'),
+        {'password': new_password, 'confirm_password': new_password},
+    )
+
+    assert response['Location'] == reverse('resetPassword')
+    assert message in reset_messages(response)
+    user.refresh_from_db()
+    assert user.check_password(password)
+
+
+def test_reset_with_missing_fields_redirects_back(client, user):
+    start_reset(client, user)
+
+    response = client.post(reverse('resetPassword'), {})
+
+    assert response['Location'] == reverse('resetPassword')
+
+
+def test_reset_for_deleted_account_redirects_to_forgot_password(client, user):
+    start_reset(client, user)
+    user.delete()
+
+    response = client.post(
+        reverse('resetPassword'),
+        {'password': 'brand-new-pass', 'confirm_password': 'brand-new-pass'},
+    )
+
+    assert response['Location'] == reverse('forgotPassword')

@@ -6,6 +6,7 @@ from django.contrib.auth.decorators import login_required
 from .forms import (
     LoginForm,
     PasswordResetRequestForm,
+    SetPasswordForm,
     RegistrationForm,
     UserForm,
     UserProfileForm,
@@ -26,6 +27,13 @@ from cart.views import _cart_id
 from cart.models import Cart, CartItem
 
 # Create your views here.
+
+
+# _first_error returns a form's first error message, for showing as a flash
+# message on views that redirect instead of re-rendering the form.
+def _first_error(form):
+    errors = form.non_field_errors() or next(iter(form.errors.values()))
+    return errors[0]
 
 
 # register handles the POST request to register a user.
@@ -251,24 +259,21 @@ def resetpassword_validate(request, uidb64, token):
 # resetPassword handles the reset password logic and view.
 def resetPassword(request):
     uid = request.session.get('uid')
-    if uid is None:
+    user = Account.objects.filter(pk=uid).first() if uid is not None else None
+    if user is None:
         messages.error(request, 'Please use the link in your password reset email.')
         return redirect('forgotPassword')
 
     if request.method == 'POST':
-        password = request.POST.get('password', '')
-        confirm_password = request.POST.get('confirm_password', '')
-
-        if password and password == confirm_password:
-            user = Account.objects.get(pk=uid)
-            user.set_password(password)
+        form = SetPasswordForm(request.POST, user=user)
+        if form.is_valid():
+            user.set_password(form.cleaned_data['password'])
             user.save()
             del request.session['uid']
             messages.success(request, 'Password reset successful')
             return redirect('login')
-        else:
-            messages.error(request, 'Passwords do not match!')
-            return redirect('resetPassword')
+        messages.error(request, _first_error(form))
+        return redirect('resetPassword')
     else:
         return render(request, 'accounts/resetPassword.html')
 
